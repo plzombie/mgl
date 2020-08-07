@@ -33,10 +33,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 typedef struct {
 	int win_width, win_height;
 	HWND wnd_handle;
+	HDC wnd_dc;
 	ATOM wnd_class_atom;
 } mgl_gfx_type;
 
-mgl_gfx_type mgl_gfx;
+static mgl_gfx_type mgl_gfx;
 
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -61,7 +62,7 @@ bool mglGfxInit(void)
 	if (mgl_gfx.wnd_class_atom == 0)
 		return false;
 
-	// Create window
+	// Get window style and size
 	if (mgl_gfx.win_width <= 0)
 		mgl_gfx.win_width = 640;
 
@@ -77,6 +78,7 @@ bool mglGfxInit(void)
 
 	AdjustWindowRectEx(&wnd_rect, style, 0, ex_style);
 
+	// Create window
 	mgl_gfx.wnd_handle = CreateWindowExW(
 		ex_style,
 		(LPCWSTR)(mgl_gfx.wnd_class_atom),
@@ -96,6 +98,15 @@ bool mglGfxInit(void)
 		return false;
 	}
 
+	// Choose and set pixel format
+	mgl_gfx.wnd_dc = GetDC(mgl_gfx.wnd_handle);
+	if(mgl_gfx.wnd_dc == NULL) {
+		DestroyWindow(mgl_gfx.wnd_handle);
+		UnregisterClassW(L"MGLWindowClass", instance);
+
+		return false;
+	}
+
 	ShowWindow(mgl_gfx.wnd_handle, SW_SHOW);
 
 	return true;
@@ -105,7 +116,7 @@ void mglGfxUpdate(void)
 {
 	MSG msg;
 
-	while(PeekMessageW(&msg, mgl_gfx.wnd_handle, 0, 0, PM_REMOVE)) {
+	while(PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
 	}
