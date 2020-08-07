@@ -38,21 +38,20 @@ typedef struct {
 
 mgl_gfx_type mgl_gfx;
 
-LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-	return DefWindowProcW(hwnd, msg, wparam, lparam);
-}
+static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 bool mglGfxInit(void)
 {
 	WNDCLASSW wnd_class;
 	HINSTANCE instance;
+	DWORD style, ex_style;
+	RECT wnd_rect;
 	
-	instance = NULL;
+	instance = GetModuleHandle(NULL);
 
 	// Register window class
 	memset(&wnd_class, 0, sizeof(WNDCLASSW));
-	wnd_class.style = CS_HREDRAW | CS_VREDRAW;
+	wnd_class.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wnd_class.lpfnWndProc = mglGfxMainWindowProc;
 	wnd_class.hInstance = instance;
 	wnd_class.hCursor = LoadCursorW(NULL, IDC_ARROW);
@@ -69,13 +68,22 @@ bool mglGfxInit(void)
 	if (mgl_gfx.win_height <= 0)
 		mgl_gfx.win_height = 480;
 
+	wnd_rect.left = wnd_rect.top = 0;
+	wnd_rect.right = mgl_gfx.win_width;
+	wnd_rect.bottom = mgl_gfx.win_height;
+
+	ex_style = WS_EX_OVERLAPPEDWINDOW;
+	style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+
+	AdjustWindowRectEx(&wnd_rect, style, 0, ex_style);
+
 	mgl_gfx.wnd_handle = CreateWindowExW(
-		WS_EX_OVERLAPPEDWINDOW,
+		ex_style,
 		(LPCWSTR)(mgl_gfx.wnd_class_atom),
 		L"MGL",
-		WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX,
+		style,
 		CW_USEDEFAULT, CW_USEDEFAULT,
-		mgl_gfx.win_width, mgl_gfx.win_height,
+		wnd_rect.right-wnd_rect.left, wnd_rect.bottom-wnd_rect.top,
 		NULL,
 		NULL,
 		instance,
@@ -101,4 +109,9 @@ void mglGfxUpdate(void)
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
 	}
+}
+
+static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+	return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
