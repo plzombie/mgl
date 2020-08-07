@@ -10,6 +10,8 @@ extern "C" {
 
 extern bool mglGfxInit(void);
 
+extern void mglGfxUpdate(void);
+
 #ifdef __cplusplus
 }
 #endif

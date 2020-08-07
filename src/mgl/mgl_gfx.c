@@ -92,3 +92,13 @@ bool mglGfxInit(void)
 
 	return true;
 }
+
+void mglGfxUpdate(void)
+{
+	MSG msg;
+
+	while(PeekMessageW(&msg, mgl_gfx.wnd_handle, 0, 0, PM_REMOVE)) {
+		TranslateMessage(&msg);
+		DispatchMessageW(&msg);
+	}
+}

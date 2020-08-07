@@ -33,9 +33,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main(void)
 {
-	if (mglGfxInit() == true)
+	if (mglGfxInit() == true) {
 		wprintf(L"Window created\n");
-	else
+		while(1) {
+			mglGfxUpdate();
+		}
+	} else
 		wprintf(L"Can't create window\n");
 
 	return 0;
