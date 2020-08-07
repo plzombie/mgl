@@ -35,11 +35,15 @@ int main(void)
 {
 	if (mglGfxInit() == true) {
 		wprintf(L"Window created\n");
-		while(1) {
+		while(!mglGfxGetParam(MGL_GFX_PARAM_NEED_EXIT)) {
 			mglGfxUpdate();
 		}
 	} else
 		wprintf(L"Can't create window\n");
+
+	mglGfxClose();
+
+	wprintf(L"Window closed\n");
 
 	return 0;
 }

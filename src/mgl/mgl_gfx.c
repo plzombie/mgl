@@ -35,6 +35,9 @@ typedef struct {
 	HWND wnd_handle;
 	HDC wnd_dc;
 	ATOM wnd_class_atom;
+	HGLRC wnd_glctx;
+	bool mgl_init;
+	bool mgl_need_exit;
 } mgl_gfx_type;
 
 static mgl_gfx_type mgl_gfx;
@@ -47,8 +50,19 @@ bool mglGfxInit(void)
 	HINSTANCE instance;
 	DWORD style, ex_style;
 	RECT wnd_rect;
+	PIXELFORMATDESCRIPTOR pfd;
+	int pixelformat;
 	
+	if(mgl_gfx.mgl_init == true)
+		return false;
+
 	instance = GetModuleHandle(NULL);
+
+	mgl_gfx.wnd_class_atom = 0;
+	mgl_gfx.wnd_handle = 0;
+	mgl_gfx.wnd_dc = 0;
+	mgl_gfx.wnd_glctx = 0;
+	mgl_gfx.mgl_need_exit = false;
 
 	// Register window class
 	memset(&wnd_class, 0, sizeof(WNDCLASSW));
@@ -74,7 +88,7 @@ bool mglGfxInit(void)
 	wnd_rect.bottom = mgl_gfx.win_height;
 
 	ex_style = WS_EX_OVERLAPPEDWINDOW;
-	style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+	style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 
 	AdjustWindowRectEx(&wnd_rect, style, 0, ex_style);
 
@@ -107,14 +121,73 @@ bool mglGfxInit(void)
 		return false;
 	}
 
+	memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
+	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+	pfd.nVersion = 1;
+	pfd.dwFlags = PFD_SUPPORT_OPENGL || PFD_DOUBLEBUFFER || PFD_DRAW_TO_WINDOW;
+	pfd.iPixelType = PFD_TYPE_RGBA;
+	pfd.iLayerType = PFD_MAIN_PLANE;
+	pfd.cColorBits = 24;
+	pfd.cDepthBits = 32;
+
+	pixelformat = ChoosePixelFormat(mgl_gfx.wnd_dc, &pfd);
+	if(!pixelformat) {
+		ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
+		DestroyWindow(mgl_gfx.wnd_handle);
+		UnregisterClassW(L"MGLWindowClass", instance);
+
+		return false;
+	}
+
+	if(!SetPixelFormat(mgl_gfx.wnd_dc, pixelformat, &pfd)) {
+		ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
+		DestroyWindow(mgl_gfx.wnd_handle);
+		UnregisterClassW(L"MGLWindowClass", instance);
+
+		return false;
+	}
+
+	mgl_gfx.wnd_glctx = wglCreateContext(mgl_gfx.wnd_dc);
+	if(!mgl_gfx.wnd_glctx) {
+		ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
+		DestroyWindow(mgl_gfx.wnd_handle);
+		UnregisterClassW(L"MGLWindowClass", instance);
+
+		return false;
+	}
+	
+	wglMakeCurrent(mgl_gfx.wnd_dc, mgl_gfx.wnd_glctx);
+
 	ShowWindow(mgl_gfx.wnd_handle, SW_SHOW);
+	SetForegroundWindow(mgl_gfx.wnd_handle);
+	SetFocus(mgl_gfx.wnd_handle);
+
+	mgl_gfx.mgl_init = true;
 
 	return true;
+}
+
+void mglGfxClose(void)
+{
+	HINSTANCE instance;
+	
+	if(mgl_gfx.mgl_init == false)
+		return;
+
+	instance = GetModuleHandle(NULL);
+
+	wglMakeCurrent(NULL, NULL);
+	wglDeleteContext(mgl_gfx.wnd_glctx);
+	ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
+	DestroyWindow(mgl_gfx.wnd_handle);
+	UnregisterClassW(L"MGLWindowClass", instance);
 }
 
 void mglGfxUpdate(void)
 {
 	MSG msg;
+
+	SwapBuffers(mgl_gfx.wnd_dc);
 
 	while(PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) {
 		TranslateMessage(&msg);
@@ -122,7 +195,55 @@ void mglGfxUpdate(void)
 	}
 }
 
+int mglGfxGetParam(int param)
+{
+	switch (param) {
+		case MGL_GFX_PARAM_INIT:
+			return mgl_gfx.mgl_init;
+		case MGL_GFX_PARAM_WIN_WIDTH:
+			return mgl_gfx.win_width;
+		case MGL_GFX_PARAM_WIN_HEIGHT:
+			return mgl_gfx.win_height;
+		case MGL_GFX_PARAM_NEED_EXIT:
+			return mgl_gfx.mgl_need_exit;
+		default:
+			return 0;
+	}
+}
+
+bool mglGfxSetParam(int param, int value)
+{
+	switch (param) {
+		case MGL_GFX_PARAM_INIT:
+			return false;
+		case MGL_GFX_PARAM_WIN_WIDTH:
+			return false;
+		case MGL_GFX_PARAM_WIN_HEIGHT:
+			return false;
+		case MGL_GFX_PARAM_NEED_EXIT:
+			mgl_gfx.mgl_need_exit = value;
+			return true;
+		default:
+			return false;
+	}
+}
+
+static void mglGfxSetOGLScreen(void)
+{
+
+}
+
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	return DefWindowProcW(hwnd, msg, wparam, lparam);
+	switch (msg) {
+		case WM_CLOSE:
+			mgl_gfx.mgl_need_exit = true;
+			return 0;
+		case WM_SIZE:
+			mgl_gfx.win_width = LOWORD(lparam);
+			mgl_gfx.win_height = HIWORD(lparam);
+			return 0;
+		default:
+			return DefWindowProcW(hwnd, msg, wparam, lparam);
+	}
 }
