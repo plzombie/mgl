@@ -181,6 +181,8 @@ void mglGfxClose(void)
 	ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
 	DestroyWindow(mgl_gfx.wnd_handle);
 	UnregisterClassW(L"MGLWindowClass", instance);
+
+	mgl_gfx.mgl_init = false;
 }
 
 void mglGfxUpdate(void)
