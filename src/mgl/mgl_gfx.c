@@ -47,6 +47,7 @@ typedef struct {
 static mgl_gfx_type mgl_gfx;
 
 static void mglGfxSetOGLScreen(void);
+static void mglGfxClearOGLScreen(void);
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 bool mglGfxInit(void)
@@ -167,7 +168,10 @@ bool mglGfxInit(void)
 	SetForegroundWindow(mgl_gfx.wnd_handle);
 	SetFocus(mgl_gfx.wnd_handle);
 
+	glDisable(GL_DEPTH_TEST);
+
 	mglGfxSetOGLScreen();
+	mglGfxClearOGLScreen();
 
 	mgl_gfx.mgl_init = true;
 
@@ -203,25 +207,25 @@ void mglGfxUpdate(void)
 		DispatchMessageW(&msg);
 	}
 
-	mglGfxSetOGLScreen();
+	mglGfxClearOGLScreen();
 }
 
 int mglGfxGetParami(int param)
 {
 	switch (param) {
-		case MGL_GFX_PARAM_INIT:
+		case MGL_GFX_PARAMI_INIT:
 			return mgl_gfx.mgl_init;
-		case MGL_GFX_PARAM_WIN_WIDTH:
+		case MGL_GFX_PARAMI_WIN_WIDTH:
 			return mgl_gfx.win_width;
-		case MGL_GFX_PARAM_WIN_HEIGHT:
+		case MGL_GFX_PARAMI_WIN_HEIGHT:
 			return mgl_gfx.win_height;
-		case MGL_GFX_PARAM_NEED_EXIT:
+		case MGL_GFX_PARAMI_NEED_EXIT:
 			return mgl_gfx.mgl_need_exit;
-		case MGL_GFX_PARAM_BKG_RED:
+		case MGL_GFX_PARAMI_BKG_RED:
 			return mgl_gfx.bkg_red;
-		case MGL_GFX_PARAM_BKG_GREEN:
+		case MGL_GFX_PARAMI_BKG_GREEN:
 			return mgl_gfx.bkg_green;
-		case MGL_GFX_PARAM_BKG_BLUE:
+		case MGL_GFX_PARAMI_BKG_BLUE:
 			return mgl_gfx.bkg_blue;
 		default:
 			return 0;
@@ -231,16 +235,16 @@ int mglGfxGetParami(int param)
 bool mglGfxSetParami(int param, int value)
 {
 	switch (param) {
-		case MGL_GFX_PARAM_INIT:
+		case MGL_GFX_PARAMI_INIT:
 			return false;
-		case MGL_GFX_PARAM_WIN_WIDTH:
+		case MGL_GFX_PARAMI_WIN_WIDTH:
 			return mglGfxSetScreen(value, mgl_gfx.win_height, MGL_GFX_WINDOW_MODE_WINDOWED, 0);
-		case MGL_GFX_PARAM_WIN_HEIGHT:
+		case MGL_GFX_PARAMI_WIN_HEIGHT:
 			return mglGfxSetScreen(mgl_gfx.win_width, value, MGL_GFX_WINDOW_MODE_WINDOWED, 0);
-		case MGL_GFX_PARAM_NEED_EXIT:
+		case MGL_GFX_PARAMI_NEED_EXIT:
 			mgl_gfx.mgl_need_exit = value;
 			return true;
-		case MGL_GFX_PARAM_BKG_RED:
+		case MGL_GFX_PARAMI_BKG_RED:
 			if(value < 0 || value > 255)
 				return false;
 			else {
@@ -248,7 +252,7 @@ bool mglGfxSetParami(int param, int value)
 
 				return true;
 			}
-		case MGL_GFX_PARAM_BKG_GREEN:
+		case MGL_GFX_PARAMI_BKG_GREEN:
 			if(value < 0 || value > 255)
 				return false;
 			else {
@@ -256,7 +260,7 @@ bool mglGfxSetParami(int param, int value)
 
 				return true;
 			}
-		case MGL_GFX_PARAM_BKG_BLUE:
+		case MGL_GFX_PARAMI_BKG_BLUE:
 			if(value < 0 || value > 255)
 				return false;
 			else {
@@ -300,11 +304,55 @@ int mglGetKey(int key)
 	return MGL_GFX_KEY_UP;
 }
 
+bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r , int col_g, int col_b)
+{
+	if(!mgl_gfx.mgl_init)
+		return false;
+
+	if(tex_id)
+		return false;
+
+	if(size_x <= 0 || size_y <= 0 || scale_x <= 0 || scale_y <= 0)
+		return false;
+
+	if(col_r < 0 || col_r > 255 || col_g < 0 || col_g > 255 || col_b < 0 || col_b > 255)
+		return false;
+
+	glBegin(GL_TRIANGLES);
+	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
+	glVertex2f((float)off_x, (float)off_y);
+	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
+	glVertex2f((float)off_x, (float)off_y + size_y * scale_y);
+	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
+	glVertex2f((float)off_x + size_x * scale_x, (float)off_y + size_y * scale_y);
+
+	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
+	glVertex2f((float)off_x, (float)off_y);
+	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
+	glVertex2f((float)off_x + size_x * scale_x, (float)off_y + size_y * scale_y);
+	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
+	glVertex2f((float)off_x + size_x * scale_x, (float)off_y);
+	glEnd();
+
+	return true;
+}
+
 static void mglGfxSetOGLScreen(void)
 {
+	glViewport(0, 0, mgl_gfx.win_width, mgl_gfx.win_height);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
 	gluOrtho2D(0, mgl_gfx.win_width, mgl_gfx.win_height, 0);
 
-	glClearColor(mgl_gfx.bkg_red/255.0f, mgl_gfx.bkg_green/255.0f, mgl_gfx.bkg_blue/255.0f, 0.0f);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+}
+
+static void mglGfxClearOGLScreen(void)
+{
+	glClearColor(mgl_gfx.bkg_red / 255.0f, mgl_gfx.bkg_green / 255.0f, mgl_gfx.bkg_blue / 255.0f, 0.0f);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 }
@@ -318,6 +366,7 @@ static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam,
 		case WM_SIZE:
 			mgl_gfx.win_width = LOWORD(lparam);
 			mgl_gfx.win_height = HIWORD(lparam);
+			mglGfxSetOGLScreen();
 			return 0;
 		default:
 			return DefWindowProcW(hwnd, msg, wparam, lparam);

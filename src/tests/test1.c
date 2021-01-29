@@ -26,33 +26,43 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <Windows.h>
+#include <gl/GL.h>
+
 #include "../../include/mgl/mgl.h"
 
 #include <stdio.h>
 #include <wchar.h>
 
+
+
 static void PrintWindowParams(void);
 
 int main(void)
 {
-	int winx, winy, color_red = 160, color_green = 64, color_blue = 192;
+	int winx, winy, mouse_x, mouse_y, color_red = 160, color_green = 64, color_blue = 192;
 
-	if(!mglGfxSetParami(MGL_GFX_PARAM_WIN_WIDTH, 800))
+	if(!mglGfxSetParami(MGL_GFX_PARAMI_WIN_WIDTH, 800))
 		wprintf(L"Error setting window width\n");
-	if(!mglGfxSetParami(MGL_GFX_PARAM_WIN_HEIGHT, 560))
+	if(!mglGfxSetParami(MGL_GFX_PARAMI_WIN_HEIGHT, 560))
 		wprintf(L"Error setting window height\n");
 
-	mglGfxSetParami(MGL_GFX_PARAM_BKG_RED, color_red);
-	mglGfxSetParami(MGL_GFX_PARAM_BKG_GREEN, color_green);
-	mglGfxSetParami(MGL_GFX_PARAM_BKG_BLUE, color_blue);
+	mglGfxSetParami(MGL_GFX_PARAMI_BKG_RED, color_red);
+	mglGfxSetParami(MGL_GFX_PARAMI_BKG_GREEN, color_green);
+	mglGfxSetParami(MGL_GFX_PARAMI_BKG_BLUE, color_blue);
 
 	if (mglGfxInit() == true) {
 		wprintf(L"Window created\n");
-		while(!mglGfxGetParami(MGL_GFX_PARAM_NEED_EXIT)) {
+		while(!mglGfxGetParami(MGL_GFX_PARAMI_NEED_EXIT)) {
 			PrintWindowParams();
 
-			winx = mglGfxGetParami(MGL_GFX_PARAM_WIN_WIDTH);
-			winy = mglGfxGetParami(MGL_GFX_PARAM_WIN_HEIGHT);
+			mouse_x = 0;
+			mouse_y = 0;
+
+			winx = mglGfxGetParami(MGL_GFX_PARAMI_WIN_WIDTH);
+			winy = mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT);
+
+			mglGfxDrawPicture(0, mouse_x, mouse_y, 0, 0, 16, 16, 1.0f, 2.0f, 64, 192, 128);
 
 			mglGfxUpdate();
 		}
@@ -70,13 +80,13 @@ static void PrintWindowParams(void)
 {
 	static int winx = 0, winy = 0;
 
-	if(mglGfxGetParami(MGL_GFX_PARAM_WIN_WIDTH) != winx) {
-		winx = mglGfxGetParami(MGL_GFX_PARAM_WIN_WIDTH);
+	if(mglGfxGetParami(MGL_GFX_PARAMI_WIN_WIDTH) != winx) {
+		winx = mglGfxGetParami(MGL_GFX_PARAMI_WIN_WIDTH);
 		wprintf(L"winx: %d\n", winx);
 	}
 
-	if(mglGfxGetParami(MGL_GFX_PARAM_WIN_HEIGHT) != winy) {
-		winy = mglGfxGetParami(MGL_GFX_PARAM_WIN_HEIGHT);
+	if(mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT) != winy) {
+		winy = mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT);
 		wprintf(L"winy: %d\n", winy);
 	}
 }
