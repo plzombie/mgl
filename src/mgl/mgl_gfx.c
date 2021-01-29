@@ -32,6 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 typedef struct {
 	int win_width, win_height;
+	char win_keys[256];
 	HWND wnd_handle;
 	HDC wnd_dc;
 	ATOM wnd_class_atom;
@@ -197,7 +198,7 @@ void mglGfxUpdate(void)
 	}
 }
 
-int mglGfxGetParam(int param)
+int mglGfxGetParami(int param)
 {
 	switch (param) {
 		case MGL_GFX_PARAM_INIT:
@@ -213,21 +214,52 @@ int mglGfxGetParam(int param)
 	}
 }
 
-bool mglGfxSetParam(int param, int value)
+bool mglGfxSetParami(int param, int value)
 {
 	switch (param) {
 		case MGL_GFX_PARAM_INIT:
 			return false;
 		case MGL_GFX_PARAM_WIN_WIDTH:
-			return false;
+			return mglGfxSetScreen(value, mgl_gfx.win_height, MGL_GFX_WINDOW_MODE_WINDOWED, 0);
 		case MGL_GFX_PARAM_WIN_HEIGHT:
-			return false;
+			return mglGfxSetScreen(mgl_gfx.win_width, value, MGL_GFX_WINDOW_MODE_WINDOWED, 0);
 		case MGL_GFX_PARAM_NEED_EXIT:
 			mgl_gfx.mgl_need_exit = value;
 			return true;
 		default:
 			return false;
 	}
+}
+
+bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
+{
+	if(mgl_gfx.mgl_init)
+		return false;
+
+	if(mode != MGL_GFX_WINDOW_MODE_WINDOWED)
+		return false;
+
+	if(winx < 0 || winy < 0)
+		return false;
+
+	if(winx == 0 && mgl_gfx.win_width != 0)
+		return false;
+
+	if(winy == 0 && mgl_gfx.win_height != 0)
+		return false;
+
+	mgl_gfx.win_width = winx;
+	mgl_gfx.win_height = winy;
+
+	return true;
+}
+
+int mglGetKey(int key)
+{
+	if(key >= 0 && key < 256)
+		return mgl_gfx.win_keys[key];
+
+	return MGL_GFX_KEY_UP;
 }
 
 static void mglGfxSetOGLScreen(void)

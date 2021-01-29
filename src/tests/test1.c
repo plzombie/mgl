@@ -31,11 +31,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <wchar.h>
 
+static void PrintWindowParams(void);
+
 int main(void)
 {
+	if(!mglGfxSetParami(MGL_GFX_PARAM_WIN_WIDTH, 800))
+		wprintf(L"Error setting window width\n");
+	if(!mglGfxSetParami(MGL_GFX_PARAM_WIN_HEIGHT, 560))
+		wprintf(L"Error setting window height\n");
+
 	if (mglGfxInit() == true) {
 		wprintf(L"Window created\n");
-		while(!mglGfxGetParam(MGL_GFX_PARAM_NEED_EXIT)) {
+		while(!mglGfxGetParami(MGL_GFX_PARAM_NEED_EXIT)) {
+			PrintWindowParams();
 			mglGfxUpdate();
 		}
 	} else
@@ -46,4 +54,19 @@ int main(void)
 	wprintf(L"Window closed\n");
 
 	return 0;
+}
+
+static void PrintWindowParams(void)
+{
+	static int winx = 0, winy = 0;
+
+	if(mglGfxGetParami(MGL_GFX_PARAM_WIN_WIDTH) != winx) {
+		winx = mglGfxGetParami(MGL_GFX_PARAM_WIN_WIDTH);
+		wprintf(L"winx: %d\n", winx);
+	}
+
+	if(mglGfxGetParami(MGL_GFX_PARAM_WIN_HEIGHT) != winy) {
+		winy = mglGfxGetParami(MGL_GFX_PARAM_WIN_HEIGHT);
+		wprintf(L"winy: %d\n", winy);
+	}
 }

@@ -15,15 +15,30 @@ enum {
 	MGL_GFX_PARAM_NEED_EXIT
 };
 
+enum {
+	MGL_GFX_KEY_UP = 0,
+	MGL_GFX_KEY_JUST_PRESSED = 1, // 0b01
+	MGL_GFX_KEY_PRESSED = 3, // 0b11
+	MGL_GFX_KEY_RELEASED = 2 // 0b10
+};
+
+enum {
+	MGL_GFX_WINDOW_MODE_WINDOWED
+};
+
 extern bool mglGfxInit(void);
 
 extern void mglGfxClose(void);
 
 extern void mglGfxUpdate(void);
 
-extern int mglGfxGetParam(int param);
+extern int mglGfxGetParami(int param);
 
-extern bool mglGfxSetParam(int param, int value);
+extern bool mglGfxSetParami(int param, int value);
+
+extern bool mglGfxSetScreen(int winx, int winy, int mode, int flags);
+
+extern int mglGetKey(int key);
 
 #ifdef __cplusplus
 }
