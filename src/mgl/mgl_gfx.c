@@ -30,8 +30,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Windows.h>
 
+#include <gl/GLU.h>
+
 typedef struct {
 	int win_width, win_height;
+	int bkg_red, bkg_green, bkg_blue;
 	char win_keys[256];
 	HWND wnd_handle;
 	HDC wnd_dc;
@@ -43,6 +46,7 @@ typedef struct {
 
 static mgl_gfx_type mgl_gfx;
 
+static void mglGfxSetOGLScreen(void);
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 bool mglGfxInit(void)
@@ -163,6 +167,8 @@ bool mglGfxInit(void)
 	SetForegroundWindow(mgl_gfx.wnd_handle);
 	SetFocus(mgl_gfx.wnd_handle);
 
+	mglGfxSetOGLScreen();
+
 	mgl_gfx.mgl_init = true;
 
 	return true;
@@ -196,6 +202,8 @@ void mglGfxUpdate(void)
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
 	}
+
+	mglGfxSetOGLScreen();
 }
 
 int mglGfxGetParami(int param)
@@ -209,6 +217,12 @@ int mglGfxGetParami(int param)
 			return mgl_gfx.win_height;
 		case MGL_GFX_PARAM_NEED_EXIT:
 			return mgl_gfx.mgl_need_exit;
+		case MGL_GFX_PARAM_BKG_RED:
+			return mgl_gfx.bkg_red;
+		case MGL_GFX_PARAM_BKG_GREEN:
+			return mgl_gfx.bkg_green;
+		case MGL_GFX_PARAM_BKG_BLUE:
+			return mgl_gfx.bkg_blue;
 		default:
 			return 0;
 	}
@@ -226,6 +240,30 @@ bool mglGfxSetParami(int param, int value)
 		case MGL_GFX_PARAM_NEED_EXIT:
 			mgl_gfx.mgl_need_exit = value;
 			return true;
+		case MGL_GFX_PARAM_BKG_RED:
+			if(value < 0 || value > 255)
+				return false;
+			else {
+				mgl_gfx.bkg_red = value;
+
+				return true;
+			}
+		case MGL_GFX_PARAM_BKG_GREEN:
+			if(value < 0 || value > 255)
+				return false;
+			else {
+				mgl_gfx.bkg_green = value;
+
+				return true;
+			}
+		case MGL_GFX_PARAM_BKG_BLUE:
+			if(value < 0 || value > 255)
+				return false;
+			else {
+				mgl_gfx.bkg_blue = value;
+
+				return true;
+			}
 		default:
 			return false;
 	}
@@ -264,7 +302,11 @@ int mglGetKey(int key)
 
 static void mglGfxSetOGLScreen(void)
 {
+	gluOrtho2D(0, mgl_gfx.win_width, mgl_gfx.win_height, 0);
 
+	glClearColor(mgl_gfx.bkg_red/255.0f, mgl_gfx.bkg_green/255.0f, mgl_gfx.bkg_blue/255.0f, 0.0f);
+
+	glClear(GL_COLOR_BUFFER_BIT);
 }
 
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)

@@ -35,15 +35,25 @@ static void PrintWindowParams(void);
 
 int main(void)
 {
+	int winx, winy, color_red = 160, color_green = 64, color_blue = 192;
+
 	if(!mglGfxSetParami(MGL_GFX_PARAM_WIN_WIDTH, 800))
 		wprintf(L"Error setting window width\n");
 	if(!mglGfxSetParami(MGL_GFX_PARAM_WIN_HEIGHT, 560))
 		wprintf(L"Error setting window height\n");
 
+	mglGfxSetParami(MGL_GFX_PARAM_BKG_RED, color_red);
+	mglGfxSetParami(MGL_GFX_PARAM_BKG_GREEN, color_green);
+	mglGfxSetParami(MGL_GFX_PARAM_BKG_BLUE, color_blue);
+
 	if (mglGfxInit() == true) {
 		wprintf(L"Window created\n");
 		while(!mglGfxGetParami(MGL_GFX_PARAM_NEED_EXIT)) {
 			PrintWindowParams();
+
+			winx = mglGfxGetParami(MGL_GFX_PARAM_WIN_WIDTH);
+			winy = mglGfxGetParami(MGL_GFX_PARAM_WIN_HEIGHT);
+
 			mglGfxUpdate();
 		}
 	} else
