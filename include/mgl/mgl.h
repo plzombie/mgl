@@ -16,7 +16,15 @@ enum {
 	MGL_GFX_PARAMI_NEED_EXIT,
 	MGL_GFX_PARAMI_BKG_RED,
 	MGL_GFX_PARAMI_BKG_GREEN,
-	MGL_GFX_PARAMI_BKG_BLUE
+	MGL_GFX_PARAMI_BKG_BLUE,
+	MGL_GFX_PARAMI_MOUSE_X,
+	MGL_GFX_PARAMI_MOUSE_Y,
+	MGL_GFX_PARAMI_MOUSE_KEY_LEFT,
+	MGL_GFX_PARAMI_MOUSE_KEY_RIGHT,
+	MGL_GFX_PARAMI_MOUSE_KEY_MIDDLE,
+	MGL_GFX_PARAMI_MOUSE_KEY_4,
+	MGL_GFX_PARAMI_MOUSE_KEY_5,
+	MGL_GFX_PARAMI_MOUSE_WHEEL
 };
 
 enum {
@@ -42,7 +50,7 @@ extern bool mglGfxSetParami(int param, int value);
 
 extern bool mglGfxSetScreen(int winx, int winy, int mode, int flags);
 
-extern int mglGetKey(int key);
+extern int mglGfxGetKey(int key);
 
 extern bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r, int col_g, int col_b);
 

@@ -29,11 +29,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "../../include/mgl/mgl.h"
 
 #include <Windows.h>
+#include <windowsx.h>
 
 #include <gl/GLU.h>
 
 typedef struct {
 	int win_width, win_height;
+	int mouse_x, mouse_y, mouse_wheel;
+	int mouse_key_l, mouse_key_r, mouse_key_m, mouse_key_4, mouse_key_5;
 	int bkg_red, bkg_green, bkg_blue;
 	char win_keys[256];
 	HWND wnd_handle;
@@ -199,8 +202,43 @@ void mglGfxClose(void)
 void mglGfxUpdate(void)
 {
 	MSG msg;
+	int i;
 
 	SwapBuffers(mgl_gfx.wnd_dc);
+
+	for(i = 0; i < 256; i++) {
+		if(mgl_gfx.win_keys[i] == MGL_GFX_KEY_JUST_PRESSED)
+			mgl_gfx.win_keys[i] = MGL_GFX_KEY_PRESSED;
+		else if(mgl_gfx.win_keys[i] == MGL_GFX_KEY_RELEASED)
+			mgl_gfx.win_keys[i] = MGL_GFX_KEY_UP;
+	}
+
+	if(mgl_gfx.mouse_key_l == MGL_GFX_KEY_JUST_PRESSED)
+		mgl_gfx.mouse_key_l = MGL_GFX_KEY_PRESSED;
+	else if(mgl_gfx.mouse_key_l == MGL_GFX_KEY_RELEASED)
+		mgl_gfx.mouse_key_l = MGL_GFX_KEY_UP;
+
+	if(mgl_gfx.mouse_key_r == MGL_GFX_KEY_JUST_PRESSED)
+		mgl_gfx.mouse_key_r = MGL_GFX_KEY_PRESSED;
+	else if(mgl_gfx.mouse_key_r == MGL_GFX_KEY_RELEASED)
+		mgl_gfx.mouse_key_r = MGL_GFX_KEY_UP;
+
+	if(mgl_gfx.mouse_key_m == MGL_GFX_KEY_JUST_PRESSED)
+		mgl_gfx.mouse_key_m = MGL_GFX_KEY_PRESSED;
+	else if(mgl_gfx.mouse_key_m == MGL_GFX_KEY_RELEASED)
+		mgl_gfx.mouse_key_m = MGL_GFX_KEY_UP;
+
+	if(mgl_gfx.mouse_key_4 == MGL_GFX_KEY_JUST_PRESSED)
+		mgl_gfx.mouse_key_4 = MGL_GFX_KEY_PRESSED;
+	else if(mgl_gfx.mouse_key_4 == MGL_GFX_KEY_RELEASED)
+		mgl_gfx.mouse_key_4 = MGL_GFX_KEY_UP;
+
+	if(mgl_gfx.mouse_key_5 == MGL_GFX_KEY_JUST_PRESSED)
+		mgl_gfx.mouse_key_5 = MGL_GFX_KEY_PRESSED;
+	else if(mgl_gfx.mouse_key_5 == MGL_GFX_KEY_RELEASED)
+		mgl_gfx.mouse_key_5 = MGL_GFX_KEY_UP;
+
+	mgl_gfx.mouse_wheel = 0;
 
 	while(PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) {
 		TranslateMessage(&msg);
@@ -227,6 +265,22 @@ int mglGfxGetParami(int param)
 			return mgl_gfx.bkg_green;
 		case MGL_GFX_PARAMI_BKG_BLUE:
 			return mgl_gfx.bkg_blue;
+		case MGL_GFX_PARAMI_MOUSE_X:
+			return mgl_gfx.mouse_x;
+		case MGL_GFX_PARAMI_MOUSE_Y:
+			return mgl_gfx.mouse_y;
+		case MGL_GFX_PARAMI_MOUSE_KEY_LEFT:
+			return mgl_gfx.mouse_key_l;
+		case MGL_GFX_PARAMI_MOUSE_KEY_RIGHT:
+			return mgl_gfx.mouse_key_r;
+		case MGL_GFX_PARAMI_MOUSE_KEY_MIDDLE:
+			return mgl_gfx.mouse_key_m;
+		case MGL_GFX_PARAMI_MOUSE_KEY_4:
+			return mgl_gfx.mouse_key_4;
+		case MGL_GFX_PARAMI_MOUSE_KEY_5:
+			return mgl_gfx.mouse_key_5;
+		case MGL_GFX_PARAMI_MOUSE_WHEEL:
+			return mgl_gfx.mouse_wheel;
 		default:
 			return 0;
 	}
@@ -268,6 +322,14 @@ bool mglGfxSetParami(int param, int value)
 
 				return true;
 			}
+		case MGL_GFX_PARAMI_MOUSE_X:
+		case MGL_GFX_PARAMI_MOUSE_Y:
+		case MGL_GFX_PARAMI_MOUSE_KEY_LEFT:
+		case MGL_GFX_PARAMI_MOUSE_KEY_RIGHT:
+		case MGL_GFX_PARAMI_MOUSE_KEY_MIDDLE:
+		case MGL_GFX_PARAMI_MOUSE_KEY_4:
+		case MGL_GFX_PARAMI_MOUSE_KEY_5:
+		case MGL_GFX_PARAMI_MOUSE_WHEEL:
 		default:
 			return false;
 	}
@@ -296,7 +358,7 @@ bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
 	return true;
 }
 
-int mglGetKey(int key)
+int mglGfxGetKey(int key)
 {
 	if(key >= 0 && key < 256)
 		return mgl_gfx.win_keys[key];
@@ -360,6 +422,64 @@ static void mglGfxClearOGLScreen(void)
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	switch (msg) {
+		case WM_LBUTTONDOWN:
+			mgl_gfx.mouse_key_l = MGL_GFX_KEY_JUST_PRESSED;
+
+			return 0;
+		case WM_LBUTTONUP:
+			mgl_gfx.mouse_key_l = MGL_GFX_KEY_RELEASED;
+
+			return 0;
+		case WM_RBUTTONDOWN:
+			mgl_gfx.mouse_key_r = MGL_GFX_KEY_JUST_PRESSED;
+
+			return 0;
+		case WM_RBUTTONUP:
+			mgl_gfx.mouse_key_r = MGL_GFX_KEY_RELEASED;
+
+			return 0;
+		case WM_MBUTTONDOWN:
+			mgl_gfx.mouse_key_m = MGL_GFX_KEY_JUST_PRESSED;
+
+			return 0;
+		case WM_MBUTTONUP:
+			mgl_gfx.mouse_key_m = MGL_GFX_KEY_RELEASED;
+
+			return 0;
+		case WM_XBUTTONDOWN:
+			if(GET_XBUTTON_WPARAM(wparam) == XBUTTON1)
+				mgl_gfx.mouse_key_4 = MGL_GFX_KEY_JUST_PRESSED;
+			else
+				mgl_gfx.mouse_key_5 = MGL_GFX_KEY_JUST_PRESSED;
+
+			return 0;
+		case WM_XBUTTONUP:
+			if(GET_XBUTTON_WPARAM(wparam) == XBUTTON1)
+				mgl_gfx.mouse_key_4 = MGL_GFX_KEY_RELEASED;
+			else
+				mgl_gfx.mouse_key_5 = MGL_GFX_KEY_RELEASED;
+
+			return 0;
+		case WM_MOUSEWHEEL:
+			mgl_gfx.mouse_wheel = GET_WHEEL_DELTA_WPARAM(wparam) / WHEEL_DELTA;
+
+			return 0;
+		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
+			if((lparam & 0x40000000) == 0) // bit 30
+				mgl_gfx.win_keys[wparam] = MGL_GFX_KEY_JUST_PRESSED;
+
+			return 0;
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
+			mgl_gfx.win_keys[wparam] = MGL_GFX_KEY_RELEASED;
+
+			return 0;
+		case WM_MOUSEMOVE:
+			mgl_gfx.mouse_x = GET_X_LPARAM(lparam);
+			mgl_gfx.mouse_y = GET_Y_LPARAM(lparam);
+
+			return 0;
 		case WM_CLOSE:
 			mgl_gfx.mgl_need_exit = true;
 			return 0;

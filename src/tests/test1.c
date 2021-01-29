@@ -34,9 +34,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <wchar.h>
 
-
-
 static void PrintWindowParams(void);
+static void PrintKeys(void);
+static void PrintMouseButtons(void);
 
 int main(void)
 {
@@ -55,9 +55,11 @@ int main(void)
 		wprintf(L"Window created\n");
 		while(!mglGfxGetParami(MGL_GFX_PARAMI_NEED_EXIT)) {
 			PrintWindowParams();
+			PrintKeys();
+			PrintMouseButtons();
 
-			mouse_x = 0;
-			mouse_y = 0;
+			mouse_x = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_X);
+			mouse_y = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_Y);
 
 			winx = mglGfxGetParami(MGL_GFX_PARAMI_WIN_WIDTH);
 			winy = mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT);
@@ -89,4 +91,54 @@ static void PrintWindowParams(void)
 		winy = mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT);
 		wprintf(L"winy: %d\n", winy);
 	}
+}
+
+static void PrintKeys(void)
+{
+	char key;
+
+	for(key = '0'; key <= '9'; key++) {
+		if(mglGfxGetKey(key) == MGL_GFX_KEY_JUST_PRESSED)
+			wprintf(L"Key %c pressed\n", key);
+		if(mglGfxGetKey(key) == MGL_GFX_KEY_RELEASED)
+			wprintf(L"Key %c released\n", key);
+	}
+
+	for(key = 'A'; key <= 'Z'; key++) {
+		if(mglGfxGetKey(key) == MGL_GFX_KEY_JUST_PRESSED)
+			wprintf(L"Key %c pressed\n", key);
+		if(mglGfxGetKey(key) == MGL_GFX_KEY_RELEASED)
+			wprintf(L"Key %c released\n", key);
+	}
+}
+
+static void PrintMouseButtons(void)
+{
+	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_LEFT) == MGL_GFX_KEY_JUST_PRESSED)
+		wprintf(L"Left mouse button pressed\n");
+	else if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_LEFT) == MGL_GFX_KEY_RELEASED)
+		wprintf(L"Left mouse button released\n");
+
+	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_RIGHT) == MGL_GFX_KEY_JUST_PRESSED)
+		wprintf(L"Right mouse button pressed\n");
+	else if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_RIGHT) == MGL_GFX_KEY_RELEASED)
+		wprintf(L"Right mouse button released\n");
+
+	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_MIDDLE) == MGL_GFX_KEY_JUST_PRESSED)
+		wprintf(L"Middle mouse button pressed\n");
+	else if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_MIDDLE) == MGL_GFX_KEY_RELEASED)
+		wprintf(L"Middle mouse button released\n");
+
+	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_4) == MGL_GFX_KEY_JUST_PRESSED)
+		wprintf(L"4 mouse button pressed\n");
+	else if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_4) == MGL_GFX_KEY_RELEASED)
+		wprintf(L"4 mouse button released\n");
+
+	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_5) == MGL_GFX_KEY_JUST_PRESSED)
+		wprintf(L"5 mouse button pressed\n");
+	else if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_5) == MGL_GFX_KEY_RELEASED)
+		wprintf(L"5 mouse button released\n");
+
+	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_WHEEL))
+		wprintf(L"Mouse wheel: %d\n", mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_WHEEL));
 }
