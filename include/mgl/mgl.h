@@ -29,6 +29,10 @@ enum {
 };
 
 enum {
+	MGL_GFX_PARAMW_WIN_INPUT_CHARS
+};
+
+enum {
 	MGL_GFX_KEY_UP = 0,
 	MGL_GFX_KEY_JUST_PRESSED = 1, // 0b01
 	MGL_GFX_KEY_PRESSED = 3, // 0b11
@@ -60,6 +64,10 @@ extern void mglGfxUpdate(void);
 extern int mglGfxGetParami(int param);
 
 extern bool mglGfxSetParami(int param, int value);
+
+extern wchar_t *mglGfxGetParamw(int param);
+
+extern bool mglGfxSetParamw(int param, wchar_t *value);
 
 extern bool mglGfxSetScreen(int winx, int winy, int mode, int flags);
 

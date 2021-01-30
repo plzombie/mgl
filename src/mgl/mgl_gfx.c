@@ -51,6 +51,8 @@ typedef struct {
 	int mouse_key_l, mouse_key_r, mouse_key_m, mouse_key_4, mouse_key_5;
 	int bkg_red, bkg_green, bkg_blue;
 	char win_keys[256];
+	wchar_t *win_input_chars;
+	size_t win_input_chars_max;
 	HWND wnd_handle;
 	HDC wnd_dc;
 	ATOM wnd_class_atom;
@@ -78,6 +80,12 @@ bool mglGfxInit(void)
 		return false;
 
 	instance = GetModuleHandle(NULL);
+
+	mgl_gfx.win_input_chars_max = 2;
+	mgl_gfx.win_input_chars = malloc(mgl_gfx.win_input_chars_max * sizeof(wchar_t));
+	if(!mgl_gfx.win_input_chars)
+		return false;
+	mgl_gfx.win_input_chars[0] = 0;
 
 	mgl_gfx.wnd_class_atom = 0;
 	mgl_gfx.wnd_handle = 0;
@@ -214,6 +222,8 @@ void mglGfxClose(void)
 	if(mgl_gfx.textures_max)
 		free(mgl_gfx.textures);
 
+	free(mgl_gfx.win_input_chars);
+
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(mgl_gfx.wnd_glctx);
 	ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
@@ -266,6 +276,8 @@ void mglGfxUpdate(void)
 
 	mgl_gfx.mgl_need_exit = false;
 
+	mgl_gfx.win_input_chars[0] = 0;
+
 	while(PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
@@ -274,9 +286,30 @@ void mglGfxUpdate(void)
 	mglGfxClearOGLScreen();
 }
 
+wchar_t *mglGfxGetParamw(int param)
+{
+	switch(param) {
+		case MGL_GFX_PARAMW_WIN_INPUT_CHARS:
+			return mgl_gfx.win_input_chars;
+		default:
+			return 0;
+	}
+}
+
+bool mglGfxSetParamw(int param, wchar_t *value)
+{
+	(void)value;
+	
+	switch(param) {
+		case MGL_GFX_PARAMW_WIN_INPUT_CHARS:
+		default:
+			return false;
+	}
+}
+
 int mglGfxGetParami(int param)
 {
-	switch (param) {
+	switch(param) {
 		case MGL_GFX_PARAMI_INIT:
 			return mgl_gfx.mgl_init;
 		case MGL_GFX_PARAMI_WIN_WIDTH:
@@ -622,6 +655,32 @@ static void mglGfxClearOGLScreen(void)
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	switch (msg) {
+		case WM_CHAR:
+		{
+			size_t i;
+
+			for(i = 0; i < mgl_gfx.win_input_chars_max-1; i++) {
+				if(mgl_gfx.win_input_chars[i] == 0)
+					break;
+			}
+			if(i == mgl_gfx.win_input_chars_max - 1) {
+				wchar_t *_input_chars;
+				size_t _input_chars_max;
+
+				_input_chars_max = mgl_gfx.win_input_chars_max * 2;
+				_input_chars = realloc(mgl_gfx.win_input_chars, _input_chars_max * sizeof(wchar_t));
+				if(!_input_chars)
+					return 0;
+
+				mgl_gfx.win_input_chars = _input_chars;
+				mgl_gfx.win_input_chars_max = _input_chars_max;
+			}
+
+			mgl_gfx.win_input_chars[i] = wparam;
+			mgl_gfx.win_input_chars[i + 1] = 0;
+
+			return 0;
+		}
 		case WM_LBUTTONDOWN:
 			mgl_gfx.mouse_key_l = MGL_GFX_KEY_JUST_PRESSED;
 

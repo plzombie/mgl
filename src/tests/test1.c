@@ -40,6 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static void PrintWindowParams(void);
 static void PrintKeys(void);
 static void PrintMouseButtons(void);
+static void PrintInputChars(void);
 static size_t CreateTextureWithStbImage(char *filename, int tex_filters);
 
 int main(void)
@@ -70,6 +71,7 @@ int main(void)
 			PrintWindowParams();
 			PrintKeys();
 			PrintMouseButtons();
+			PrintInputChars();
 
 			mouse_x = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_X);
 			mouse_y = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_Y);
@@ -199,4 +201,14 @@ static void PrintMouseButtons(void)
 
 	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_WHEEL))
 		wprintf(L"Mouse wheel: %d\n", mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_WHEEL));
+}
+
+static void PrintInputChars(void)
+{
+	wchar_t *inp;
+
+	inp = mglGfxGetParamw(MGL_GFX_PARAMW_WIN_INPUT_CHARS);
+
+	if(*inp)
+		wprintf(L"Text input: %ls\n", inp);
 }
