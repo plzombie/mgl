@@ -31,16 +31,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../../include/mgl/mgl.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "../third_party/stb_image.h"
+
 #include <stdio.h>
 #include <wchar.h>
 
 static void PrintWindowParams(void);
 static void PrintKeys(void);
 static void PrintMouseButtons(void);
+static size_t CreateTextureWithStbImage(char *filename);
 
 int main(void)
 {
 	int winx, winy, mouse_x, mouse_y, color_red = 160, color_green = 64, color_blue = 192;
+	size_t pic;
 	bool block_hovered = false;
 
 	if(!mglGfxSetParami(MGL_GFX_PARAMI_WIN_WIDTH, 800))
@@ -54,6 +59,13 @@ int main(void)
 
 	if (mglGfxInit() == true) {
 		wprintf(L"Window created\n");
+
+		pic = CreateTextureWithStbImage("IMG_8315.jpg", 0);
+		if(pic)
+			wprintf(L"Pictures created\n");
+		else
+			wprintf(L"Pictures not created\n");
+
 		while(!mglGfxGetParami(MGL_GFX_PARAMI_NEED_EXIT)) {
 			PrintWindowParams();
 			PrintKeys();
@@ -82,6 +94,39 @@ int main(void)
 	wprintf(L"Window closed\n");
 
 	return 0;
+}
+
+size_t CreateTextureWithStbImage(char *filename, int tex_filters)
+{
+	int width, height, channels, tex_format;
+	unsigned char *buffer;
+	size_t tex_id;
+
+	buffer = stbi_load(filename, &width, &height, &channels, 0);
+
+	if(!buffer)
+		return 0;
+
+	switch(channels) {
+		case 1:
+			tex_format = MGL_GFX_TEX_FORMAT_GRAYSCALE;
+			break;
+		case 3:
+			tex_format = MGL_GFX_TEX_FORMAT_R8G8B8;
+			break;
+		case 4:
+			tex_format = MGL_GFX_TEX_FORMAT_R8G8B8A8;
+			break;
+		default:
+			free(buffer);
+			return 0;
+	}
+
+	tex_id = mglGfxCreateTextureFromMemory(width, height, tex_format, tex_filters, buffer);
+
+	free(buffer);
+
+	return tex_id;
 }
 
 static void PrintWindowParams(void)

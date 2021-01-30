@@ -418,6 +418,9 @@ size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_he
 
 			tex_id = mgl_gfx.textures_max;
 			memset(mgl_gfx.textures + mgl_gfx.textures_max, 0, (_textures_max - mgl_gfx.textures_max) * sizeof(mgl_gfx_textures_type));
+
+			mgl_gfx.textures = _textures;
+			mgl_gfx.textures_max = _textures_max;
 		}
 	}
 
@@ -455,12 +458,17 @@ void mglGfxDestroyTexture(size_t tex_id)
 bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r , int col_g, int col_b)
 {
 	float pic_width, pic_height;
+	bool no_texture;
 
 	if(!mgl_gfx.mgl_init)
 		return false;
 
-	if(tex_id)
-		return false;
+	if(tex_id == 0 || tex_id > mgl_gfx.textures_max)
+		no_texture = true;
+	else if(mgl_gfx.textures[tex_id - 1].tex_used == false)
+		no_texture = true;
+	else
+		no_texture = false;
 
 	if(size_x <= 0 || size_y <= 0 || scale_x <= 0 || scale_y <= 0)
 		return false;
@@ -471,6 +479,25 @@ bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff
 	pic_width = size_x * scale_x;
 	pic_height = size_y * scale_y;
 
+	// Установка текстуры
+	if(no_texture == true) {
+		if(mgl_gfx.tex_have == true) {
+			glDisable(GL_TEXTURE_2D);
+			mgl_gfx.tex_have = false;
+		}
+	} else {
+		if(mgl_gfx.tex_have == false) {
+			glEnable(GL_TEXTURE_2D);
+			mgl_gfx.tex_have = true;
+			glBindTexture(GL_TEXTURE_2D, mgl_gfx.textures[tex_id - 1].tex_int_id);
+			mgl_gfx.tex_int_id = mgl_gfx.textures[tex_id - 1].tex_int_id;
+		} else if(mgl_gfx.tex_int_id != mgl_gfx.textures[tex_id - 1].tex_int_id) {
+			glBindTexture(GL_TEXTURE_2D, mgl_gfx.textures[tex_id - 1].tex_int_id);
+			mgl_gfx.tex_int_id = mgl_gfx.textures[tex_id - 1].tex_int_id;
+		}
+	}
+
+	// Отрисовка изображения
 	glBegin(GL_TRIANGLES);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x, (float)off_y);

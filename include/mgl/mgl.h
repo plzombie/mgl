@@ -38,6 +38,12 @@ enum {
 	MGL_GFX_WINDOW_MODE_WINDOWED
 };
 
+enum {
+	MGL_GFX_TEX_FORMAT_R8G8B8,
+	MGL_GFX_TEX_FORMAT_R8G8B8A8,
+	MGL_GFX_TEX_FORMAT_GRAYSCALE
+};
+
 extern bool mglGfxInit(void);
 
 extern void mglGfxClose(void);
