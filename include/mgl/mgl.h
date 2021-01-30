@@ -44,6 +44,12 @@ enum {
 	MGL_GFX_TEX_FORMAT_GRAYSCALE
 };
 
+enum {
+	MGL_GFX_TEX_FILTER_REPEAT = 0x1,
+	MGL_GFX_TEX_FILTER_LINEAR_MIN = 0x2,
+	MGL_GFX_TEX_FILTER_LINEAR_MAG = 0x4
+};
+
 extern bool mglGfxInit(void);
 
 extern void mglGfxClose(void);

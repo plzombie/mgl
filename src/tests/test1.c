@@ -80,9 +80,12 @@ int main(void)
 			mglGfxDrawPicture(0, mouse_x, mouse_y, 0, 0, 16, 16, 1.0f, 2.0f, 64, 192, 128);
 
 			if(block_hovered)
-				block_hovered = mglGfxDrawPicture(0, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 255, 255, 255);
+				block_hovered = mglGfxDrawPicture(pic, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 255, 255, 255);
 			else
-				block_hovered = mglGfxDrawPicture(0, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 64, 32, 80);
+				block_hovered = mglGfxDrawPicture(pic, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 64, 32, 80);
+
+			if(glGetError())
+				wprintf(L"OGL error occured\n");
 
 			mglGfxUpdate();
 		}

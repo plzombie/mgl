@@ -432,10 +432,33 @@ size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_he
 	if(glGetError())
 		return 0;
 
+	glBindTexture(GL_TEXTURE_2D, gl_tex_id);
+
+	if(tex_filters & MGL_GFX_TEX_FILTER_LINEAR_MIN)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	else
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	if(tex_filters & MGL_GFX_TEX_FILTER_LINEAR_MAG)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	else
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	if(tex_filters & MGL_GFX_TEX_FILTER_REPEAT) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	} else {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	}
+
 	mgl_gfx.textures[tex_id].tex_int_id = gl_tex_id;
 	mgl_gfx.textures[tex_id].tex_width = tex_width;
 	mgl_gfx.textures[tex_id].tex_height = tex_height;
 	mgl_gfx.textures[tex_id].tex_used = true;
+
+	if(mgl_gfx.tex_have)
+		glBindTexture(GL_TEXTURE_2D, mgl_gfx.tex_int_id);
 
 	return tex_id + 1;
 }
