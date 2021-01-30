@@ -8,6 +8,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 enum {
 	MGL_GFX_PARAMI_INIT,

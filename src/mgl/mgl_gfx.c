@@ -28,6 +28,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../../include/mgl/mgl.h"
 
+#define _WIN32_WINNT 0x0600
+
 #include <Windows.h>
 #include <windowsx.h>
 
@@ -361,6 +363,8 @@ bool mglGfxSetParami(int param, int value)
 
 bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
 {
+	(void)flags;
+
 	if(mgl_gfx.mgl_init)
 		return false;
 
@@ -558,30 +562,32 @@ bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff
 		}
 	}
 
-	tex_start_x =(float)(toff_x) / mgl_gfx.textures[tex_id - 1].tex_width;
-	tex_end_x = (float)(toff_x + size_x) / mgl_gfx.textures[tex_id - 1].tex_width;
-	tex_start_y = (float)(toff_y) / mgl_gfx.textures[tex_id - 1].tex_height;
-	tex_end_y = (float)(toff_y + size_y) / mgl_gfx.textures[tex_id - 1].tex_height;
+	if(no_texture == false) {
+		tex_start_x = (float)(toff_x) / mgl_gfx.textures[tex_id - 1].tex_width;
+		tex_end_x = (float)(toff_x + size_x) / mgl_gfx.textures[tex_id - 1].tex_width;
+		tex_start_y = (float)(toff_y) / mgl_gfx.textures[tex_id - 1].tex_height;
+		tex_end_y = (float)(toff_y + size_y) / mgl_gfx.textures[tex_id - 1].tex_height;
+	}
 
 	// Отрисовка изображения
 	glBegin(GL_TRIANGLES);
-	glTexCoord2f(tex_start_x, tex_start_y);
+	if(no_texture == false) glTexCoord2f(tex_start_x, tex_start_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x, (float)off_y);
-	glTexCoord2f(tex_start_x, tex_end_y);
+	if(no_texture == false) glTexCoord2f(tex_start_x, tex_end_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x, (float)off_y + pic_height);
-	glTexCoord2f(tex_end_x, tex_end_y);
+	if(no_texture == false) glTexCoord2f(tex_end_x, tex_end_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x + pic_width, (float)off_y + pic_height);
 
-	glTexCoord2f(tex_start_x, tex_start_y);
+	if(no_texture == false) glTexCoord2f(tex_start_x, tex_start_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x, (float)off_y);
-	glTexCoord2f(tex_end_x, tex_end_y);
+	if(no_texture == false) glTexCoord2f(tex_end_x, tex_end_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x + pic_width, (float)off_y + pic_height);
-	glTexCoord2f(tex_end_x, tex_start_y);
+	if(no_texture == false) glTexCoord2f(tex_end_x, tex_start_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x + pic_width, (float)off_y);
 	glEnd();

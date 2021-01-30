@@ -18,3 +18,10 @@
 *.ilk
 *.idb
 *.exe.recipe
+
+# OpenWatcom
+*.lk1
+*.map
+*.mk
+*.mk1
+*.sym
