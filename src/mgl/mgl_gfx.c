@@ -259,6 +259,8 @@ void mglGfxUpdate(void)
 
 	mgl_gfx.mouse_wheel = 0;
 
+	mgl_gfx.mgl_need_exit = false;
+
 	while(PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
