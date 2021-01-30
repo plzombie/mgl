@@ -40,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static void PrintWindowParams(void);
 static void PrintKeys(void);
 static void PrintMouseButtons(void);
-static size_t CreateTextureWithStbImage(char *filename);
+static size_t CreateTextureWithStbImage(char *filename, int tex_filters);
 
 int main(void)
 {

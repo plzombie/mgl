@@ -209,6 +209,9 @@ void mglGfxClose(void)
 		if(mgl_gfx.textures[i].tex_used == true)
 			mglGfxDestroyTexture(i + 1);
 
+	if(mgl_gfx.textures_max)
+		free(mgl_gfx.textures);
+
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(mgl_gfx.wnd_glctx);
 	ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
@@ -490,7 +493,7 @@ size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_he
 	mgl_gfx.textures[tex_id].tex_used = true;
 
 	if(mgl_gfx.tex_have)
-		glBindTexture(GL_TEXTURE_2D, mgl_gfx.tex_int_id);
+		glBindTexture(GL_TEXTURE_2D, (GLuint)(mgl_gfx.tex_int_id));
 
 	return tex_id + 1;
 }
@@ -505,9 +508,11 @@ void mglGfxDestroyTexture(size_t tex_id)
 	if(mgl_gfx.textures[tex_id - 1].tex_used == false)
 		return;
 
-	gl_tex_id = mgl_gfx.textures[tex_id - 1].tex_int_id;
+	gl_tex_id = (GLuint)(mgl_gfx.textures[tex_id - 1].tex_int_id);
 
 	glDeleteTextures(1, &gl_tex_id);
+
+	mgl_gfx.textures[tex_id - 1].tex_used = false;
 }
 
 bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r , int col_g, int col_b)
@@ -545,10 +550,10 @@ bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff
 		if(mgl_gfx.tex_have == false) {
 			glEnable(GL_TEXTURE_2D);
 			mgl_gfx.tex_have = true;
-			glBindTexture(GL_TEXTURE_2D, mgl_gfx.textures[tex_id - 1].tex_int_id);
+			glBindTexture(GL_TEXTURE_2D, (GLuint)(mgl_gfx.textures[tex_id - 1].tex_int_id));
 			mgl_gfx.tex_int_id = mgl_gfx.textures[tex_id - 1].tex_int_id;
 		} else if(mgl_gfx.tex_int_id != mgl_gfx.textures[tex_id - 1].tex_int_id) {
-			glBindTexture(GL_TEXTURE_2D, mgl_gfx.textures[tex_id - 1].tex_int_id);
+			glBindTexture(GL_TEXTURE_2D, (GLuint)(mgl_gfx.textures[tex_id - 1].tex_int_id));
 			mgl_gfx.tex_int_id = mgl_gfx.textures[tex_id - 1].tex_int_id;
 		}
 	}
