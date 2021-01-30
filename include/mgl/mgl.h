@@ -52,6 +52,10 @@ extern bool mglGfxSetScreen(int winx, int winy, int mode, int flags);
 
 extern int mglGfxGetKey(int key);
 
+extern size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer);
+
+extern void mglGfxDestroyTexture(size_t tex_id);
+
 extern bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r, int col_g, int col_b);
 
 #ifdef __cplusplus

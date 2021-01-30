@@ -34,6 +34,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <gl/GLU.h>
 
 typedef struct {
+	unsigned int tex_width, tex_height;
+	uintptr_t tex_int_id;
+	bool tex_used;
+} mgl_gfx_textures_type;
+
+typedef struct {
+	intptr_t tex_int_id;
+	mgl_gfx_textures_type *textures;
+	size_t textures_max;
+	bool tex_have; // true если текстура tex_int_id установлена через glBindTexture
 	int win_width, win_height;
 	int mouse_x, mouse_y, mouse_wheel;
 	int mouse_key_l, mouse_key_r, mouse_key_m, mouse_key_4, mouse_key_5;
@@ -173,6 +183,10 @@ bool mglGfxInit(void)
 
 	glDisable(GL_DEPTH_TEST);
 
+	mgl_gfx.textures = 0;
+	mgl_gfx.textures_max = mgl_gfx.tex_int_id = 0;
+	mgl_gfx.tex_have = false;
+
 	mglGfxSetOGLScreen();
 	mglGfxClearOGLScreen();
 
@@ -183,12 +197,17 @@ bool mglGfxInit(void)
 
 void mglGfxClose(void)
 {
+	size_t i;
 	HINSTANCE instance;
 	
 	if(mgl_gfx.mgl_init == false)
 		return;
 
 	instance = GetModuleHandle(NULL);
+
+	for(i = 0; i < mgl_gfx.textures_max; i++)
+		if(mgl_gfx.textures[i].tex_used == true)
+			mglGfxDestroyTexture(i + 1);
 
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(mgl_gfx.wnd_glctx);
@@ -366,8 +385,77 @@ int mglGfxGetKey(int key)
 	return MGL_GFX_KEY_UP;
 }
 
+size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer)
+{
+	GLuint gl_tex_id;
+	size_t tex_id = 0;
+
+	// Аллокатор для текстур
+	if(mgl_gfx.textures_max == 0) {
+		mgl_gfx.textures_max = 2;
+		mgl_gfx.textures = malloc(mgl_gfx.textures_max * sizeof(mgl_gfx_textures_type));
+		if(!mgl_gfx.textures)
+			return 0;
+
+		memset(mgl_gfx.textures, 0, mgl_gfx.textures_max * sizeof(mgl_gfx_textures_type));
+	} else {
+		size_t i;
+
+		for(i = 0; i < mgl_gfx.textures_max; i++)
+			if(mgl_gfx.textures[i].tex_used == false)
+				break;
+
+		if(i < mgl_gfx.textures_max)
+			tex_id = i;
+		else {
+			mgl_gfx_textures_type *_textures;
+			size_t _textures_max;
+
+			_textures_max = mgl_gfx.textures_max * 2;
+			_textures = realloc(mgl_gfx.textures, _textures_max * sizeof(mgl_gfx_textures_type));
+			if(!_textures)
+				return 0;
+
+			tex_id = mgl_gfx.textures_max;
+			memset(mgl_gfx.textures + mgl_gfx.textures_max, 0, (_textures_max - mgl_gfx.textures_max) * sizeof(mgl_gfx_textures_type));
+		}
+	}
+
+	// Создание текстуры
+
+	glGetError(); // Сбрасываем флаги ошибки
+
+	glGenTextures(1, &gl_tex_id);
+	if(glGetError())
+		return 0;
+
+	mgl_gfx.textures[tex_id].tex_int_id = gl_tex_id;
+	mgl_gfx.textures[tex_id].tex_width = tex_width;
+	mgl_gfx.textures[tex_id].tex_height = tex_height;
+	mgl_gfx.textures[tex_id].tex_used = true;
+
+	return tex_id + 1;
+}
+
+void mglGfxDestroyTexture(size_t tex_id)
+{
+	GLuint gl_tex_id;
+
+	if(tex_id == 0 || tex_id > mgl_gfx.textures_max)
+		return;
+
+	if(mgl_gfx.textures[tex_id - 1].tex_used == false)
+		return;
+
+	gl_tex_id = mgl_gfx.textures[tex_id - 1].tex_int_id;
+
+	glDeleteTextures(1, &gl_tex_id);
+}
+
 bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r , int col_g, int col_b)
 {
+	float pic_width, pic_height;
+
 	if(!mgl_gfx.mgl_init)
 		return false;
 
@@ -380,23 +468,30 @@ bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff
 	if(col_r < 0 || col_r > 255 || col_g < 0 || col_g > 255 || col_b < 0 || col_b > 255)
 		return false;
 
+	pic_width = size_x * scale_x;
+	pic_height = size_y * scale_y;
+
 	glBegin(GL_TRIANGLES);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x, (float)off_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
-	glVertex2f((float)off_x, (float)off_y + size_y * scale_y);
+	glVertex2f((float)off_x, (float)off_y + pic_height);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
-	glVertex2f((float)off_x + size_x * scale_x, (float)off_y + size_y * scale_y);
+	glVertex2f((float)off_x + pic_width, (float)off_y + pic_height);
 
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x, (float)off_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
-	glVertex2f((float)off_x + size_x * scale_x, (float)off_y + size_y * scale_y);
+	glVertex2f((float)off_x + pic_width, (float)off_y + pic_height);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
-	glVertex2f((float)off_x + size_x * scale_x, (float)off_y);
+	glVertex2f((float)off_x + pic_width, (float)off_y);
 	glEnd();
 
-	return true;
+	if(off_x <= mgl_gfx.mouse_x && off_x + pic_width > mgl_gfx.mouse_x &&
+		off_y <= mgl_gfx.mouse_y && off_y + pic_height > mgl_gfx.mouse_y)
+		return true;
+	else
+		return false;
 }
 
 static void mglGfxSetOGLScreen(void)

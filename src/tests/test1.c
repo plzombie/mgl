@@ -41,6 +41,7 @@ static void PrintMouseButtons(void);
 int main(void)
 {
 	int winx, winy, mouse_x, mouse_y, color_red = 160, color_green = 64, color_blue = 192;
+	bool block_hovered = false;
 
 	if(!mglGfxSetParami(MGL_GFX_PARAMI_WIN_WIDTH, 800))
 		wprintf(L"Error setting window width\n");
@@ -65,6 +66,11 @@ int main(void)
 			winy = mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT);
 
 			mglGfxDrawPicture(0, mouse_x, mouse_y, 0, 0, 16, 16, 1.0f, 2.0f, 64, 192, 128);
+
+			if(block_hovered)
+				block_hovered = mglGfxDrawPicture(0, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 255, 255, 255);
+			else
+				block_hovered = mglGfxDrawPicture(0, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 64, 32, 80);
 
 			mglGfxUpdate();
 		}
