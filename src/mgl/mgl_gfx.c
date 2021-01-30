@@ -113,6 +113,7 @@ bool mglGfxInit(void)
 	if (mgl_gfx.win_height <= 0)
 		mgl_gfx.win_height = 480;
 
+	memset(&wnd_rect, 0, sizeof(RECT));
 	wnd_rect.left = wnd_rect.top = 0;
 	wnd_rect.right = mgl_gfx.win_width;
 	wnd_rect.bottom = mgl_gfx.win_height;
@@ -204,8 +205,6 @@ void mglGfxUpdate(void)
 	MSG msg;
 	int i;
 
-	SwapBuffers(mgl_gfx.wnd_dc);
-
 	for(i = 0; i < 256; i++) {
 		if(mgl_gfx.win_keys[i] == MGL_GFX_KEY_JUST_PRESSED)
 			mgl_gfx.win_keys[i] = MGL_GFX_KEY_PRESSED;
@@ -244,12 +243,15 @@ void mglGfxUpdate(void)
 
 	mgl_gfx.win_input_chars[0] = 0;
 
+	mgl_gfx.gfx_api.SwapBuffers(mgl_gfx.wnd_dc);
+	mgl_gfx.gfx_api.ClearScreen(mgl_gfx.bkg_red, mgl_gfx.bkg_green, mgl_gfx.bkg_blue);
+
 	while(PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
 	}
 
-	mgl_gfx.gfx_api.ClearScreen(mgl_gfx.bkg_red, mgl_gfx.bkg_green, mgl_gfx.bkg_blue);
+	
 }
 
 wchar_t *mglGfxGetParamw(int param)
@@ -503,17 +505,13 @@ size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_he
 
 void mglGfxDestroyTexture(size_t tex_id)
 {
-	GLuint gl_tex_id;
-
 	if(tex_id == 0 || tex_id > mgl_gfx.textures_max)
 		return;
 
 	if(mgl_gfx.textures[tex_id - 1].tex_used == false)
-		return;
+		return;	
 
-	gl_tex_id = (GLuint)(mgl_gfx.textures[tex_id - 1].tex_int_id);
-
-	glDeleteTextures(1, &gl_tex_id);
+	mgl_gfx.gfx_api.DestroyTexture(mgl_gfx.textures[tex_id - 1].tex_int_id);
 
 	mgl_gfx.textures[tex_id - 1].tex_used = false;
 }
@@ -622,7 +620,7 @@ static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam,
 				mgl_gfx.win_input_chars_max = _input_chars_max;
 			}
 
-			mgl_gfx.win_input_chars[i] = wparam;
+			mgl_gfx.win_input_chars[i] = (wchar_t)wparam;
 			mgl_gfx.win_input_chars[i + 1] = 0;
 
 			return 0;
