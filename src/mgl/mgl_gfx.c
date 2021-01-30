@@ -385,6 +385,34 @@ int mglGfxGetKey(int key)
 	return MGL_GFX_KEY_UP;
 }
 
+static GLint mglGfxTexGetIntFormat(int tex_format)
+{
+	switch(tex_format) {
+		case MGL_GFX_TEX_FORMAT_R8G8B8:
+			return GL_RGB;
+		case MGL_GFX_TEX_FORMAT_R8G8B8A8:
+			return GL_RGBA;
+		case MGL_GFX_TEX_FORMAT_GRAYSCALE:
+			return GL_LUMINANCE8;
+		default:
+			return 0;
+	}
+}
+
+static GLint mglGfxTexGetFormat(int tex_format)
+{
+	switch(tex_format) {
+		case MGL_GFX_TEX_FORMAT_R8G8B8:
+			return GL_RGB;
+		case MGL_GFX_TEX_FORMAT_R8G8B8A8:
+			return GL_RGBA;
+		case MGL_GFX_TEX_FORMAT_GRAYSCALE:
+			return GL_LUMINANCE;
+		default:
+			return 0;
+	}
+}
+
 size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer)
 {
 	GLuint gl_tex_id;
@@ -452,6 +480,8 @@ size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_he
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	}
 
+	glTexImage2D(GL_TEXTURE_2D, 0, mglGfxTexGetIntFormat(tex_format), tex_width, tex_height, 0, mglGfxTexGetFormat(tex_format), GL_UNSIGNED_BYTE, buffer);
+
 	mgl_gfx.textures[tex_id].tex_int_id = gl_tex_id;
 	mgl_gfx.textures[tex_id].tex_width = tex_width;
 	mgl_gfx.textures[tex_id].tex_height = tex_height;
@@ -481,6 +511,7 @@ void mglGfxDestroyTexture(size_t tex_id)
 bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r , int col_g, int col_b)
 {
 	float pic_width, pic_height;
+	float tex_start_x, tex_end_x, tex_start_y, tex_end_y;
 	bool no_texture;
 
 	if(!mgl_gfx.mgl_init)
@@ -520,19 +551,30 @@ bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff
 		}
 	}
 
+	tex_start_x =(float)(toff_x) / mgl_gfx.textures[tex_id - 1].tex_width;
+	tex_end_x = (float)(toff_x + size_x) / mgl_gfx.textures[tex_id - 1].tex_width;
+	tex_start_y = (float)(toff_y) / mgl_gfx.textures[tex_id - 1].tex_height;
+	tex_end_y = (float)(toff_y + size_y) / mgl_gfx.textures[tex_id - 1].tex_height;
+
 	// Отрисовка изображения
 	glBegin(GL_TRIANGLES);
+	glTexCoord2f(tex_start_x, tex_start_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x, (float)off_y);
+	glTexCoord2f(tex_start_x, tex_end_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x, (float)off_y + pic_height);
+	glTexCoord2f(tex_end_x, tex_end_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x + pic_width, (float)off_y + pic_height);
 
+	glTexCoord2f(tex_start_x, tex_start_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x, (float)off_y);
+	glTexCoord2f(tex_end_x, tex_end_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x + pic_width, (float)off_y + pic_height);
+	glTexCoord2f(tex_end_x, tex_start_y);
 	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
 	glVertex2f((float)off_x + pic_width, (float)off_y);
 	glEnd();

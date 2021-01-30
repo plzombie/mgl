@@ -44,7 +44,7 @@ static size_t CreateTextureWithStbImage(char *filename);
 
 int main(void)
 {
-	int winx, winy, mouse_x, mouse_y, color_red = 160, color_green = 64, color_blue = 192;
+	int winx, winy, mouse_x, mouse_y, mouse_bl, color_red = 160, color_green = 64, color_blue = 192;
 	size_t pic;
 	bool block_hovered = false;
 
@@ -60,7 +60,7 @@ int main(void)
 	if (mglGfxInit() == true) {
 		wprintf(L"Window created\n");
 
-		pic = CreateTextureWithStbImage("IMG_8315.jpg", 0);
+		pic = CreateTextureWithStbImage("IMG_8315.jpg", MGL_GFX_TEX_FILTER_LINEAR_MAG | MGL_GFX_TEX_FILTER_LINEAR_MAG | MGL_GFX_TEX_FILTER_REPEAT);
 		if(pic)
 			wprintf(L"Pictures created\n");
 		else
@@ -73,15 +73,19 @@ int main(void)
 
 			mouse_x = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_X);
 			mouse_y = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_Y);
+			mouse_bl = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_LEFT);
 
 			winx = mglGfxGetParami(MGL_GFX_PARAMI_WIN_WIDTH);
 			winy = mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT);
 
 			mglGfxDrawPicture(0, mouse_x, mouse_y, 0, 0, 16, 16, 1.0f, 2.0f, 64, 192, 128);
 
-			if(block_hovered)
-				block_hovered = mglGfxDrawPicture(pic, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 255, 255, 255);
-			else
+			if(block_hovered) {
+				if(mouse_bl == MGL_GFX_KEY_PRESSED)
+					block_hovered = mglGfxDrawPicture(pic, 100, 100, 0, 0, 512, 512, 0.5f, 0.5f, 255, 255, 255);
+				else
+					block_hovered = mglGfxDrawPicture(pic, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 255, 255, 255);
+			} else
 				block_hovered = mglGfxDrawPicture(pic, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 64, 32, 80);
 
 			if(glGetError())
