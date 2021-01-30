@@ -144,6 +144,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\mgl\mgl_gfx.c" />
+    <ClCompile Include="..\..\..\src\mgl\mgl_gfx_opengl1.c" />
     <ClCompile Include="..\..\..\src\tests\test1.c" />
   </ItemGroup>
   <ItemGroup>

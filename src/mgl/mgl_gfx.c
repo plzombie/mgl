@@ -26,9 +26,11 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#define _WIN32_WINNT 0x0600
+
 #include "../../include/mgl/mgl.h"
 
-#define _WIN32_WINNT 0x0600
+#include "mgl_gfx_opengl1.h"
 
 #include <Windows.h>
 #include <windowsx.h>
@@ -42,6 +44,7 @@ typedef struct {
 } mgl_gfx_textures_type;
 
 typedef struct {
+	mgl_gfx_api_type gfx_api;
 	intptr_t tex_int_id;
 	mgl_gfx_textures_type *textures;
 	size_t textures_max;
@@ -63,8 +66,6 @@ typedef struct {
 
 static mgl_gfx_type mgl_gfx;
 
-static void mglGfxSetOGLScreen(void);
-static void mglGfxClearOGLScreen(void);
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 bool mglGfxInit(void)
@@ -73,13 +74,13 @@ bool mglGfxInit(void)
 	HINSTANCE instance;
 	DWORD style, ex_style;
 	RECT wnd_rect;
-	PIXELFORMATDESCRIPTOR pfd;
-	int pixelformat;
 	
 	if(mgl_gfx.mgl_init == true)
 		return false;
 
 	instance = GetModuleHandle(NULL);
+
+	mgl_gfx.gfx_api = mglGfxGetOGL1Api();
 
 	mgl_gfx.win_input_chars_max = 2;
 	mgl_gfx.win_input_chars = malloc(mgl_gfx.win_input_chars_max * sizeof(wchar_t));
@@ -150,55 +151,21 @@ bool mglGfxInit(void)
 		return false;
 	}
 
-	memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
-	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-	pfd.nVersion = 1;
-	pfd.dwFlags = PFD_SUPPORT_OPENGL || PFD_DOUBLEBUFFER || PFD_DRAW_TO_WINDOW;
-	pfd.iPixelType = PFD_TYPE_RGBA;
-	pfd.iLayerType = PFD_MAIN_PLANE;
-	pfd.cColorBits = 24;
-	pfd.cDepthBits = 32;
-
-	pixelformat = ChoosePixelFormat(mgl_gfx.wnd_dc, &pfd);
-	if(!pixelformat) {
+	if(!mgl_gfx.gfx_api.InitGfxApi(mgl_gfx.win_width, mgl_gfx.win_height, mgl_gfx.bkg_red, mgl_gfx.bkg_green, mgl_gfx.bkg_blue, mgl_gfx.wnd_dc)) {
 		ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
 		DestroyWindow(mgl_gfx.wnd_handle);
 		UnregisterClassW(L"MGLWindowClass", instance);
 
 		return false;
 	}
-
-	if(!SetPixelFormat(mgl_gfx.wnd_dc, pixelformat, &pfd)) {
-		ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
-		DestroyWindow(mgl_gfx.wnd_handle);
-		UnregisterClassW(L"MGLWindowClass", instance);
-
-		return false;
-	}
-
-	mgl_gfx.wnd_glctx = wglCreateContext(mgl_gfx.wnd_dc);
-	if(!mgl_gfx.wnd_glctx) {
-		ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
-		DestroyWindow(mgl_gfx.wnd_handle);
-		UnregisterClassW(L"MGLWindowClass", instance);
-
-		return false;
-	}
-	
-	wglMakeCurrent(mgl_gfx.wnd_dc, mgl_gfx.wnd_glctx);
 
 	ShowWindow(mgl_gfx.wnd_handle, SW_SHOW);
 	SetForegroundWindow(mgl_gfx.wnd_handle);
 	SetFocus(mgl_gfx.wnd_handle);
 
-	glDisable(GL_DEPTH_TEST);
-
 	mgl_gfx.textures = 0;
 	mgl_gfx.textures_max = mgl_gfx.tex_int_id = 0;
 	mgl_gfx.tex_have = false;
-
-	mglGfxSetOGLScreen();
-	mglGfxClearOGLScreen();
 
 	mgl_gfx.mgl_init = true;
 
@@ -224,8 +191,7 @@ void mglGfxClose(void)
 
 	free(mgl_gfx.win_input_chars);
 
-	wglMakeCurrent(NULL, NULL);
-	wglDeleteContext(mgl_gfx.wnd_glctx);
+	mgl_gfx.gfx_api.DestroyGfxApi();
 	ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
 	DestroyWindow(mgl_gfx.wnd_handle);
 	UnregisterClassW(L"MGLWindowClass", instance);
@@ -283,7 +249,7 @@ void mglGfxUpdate(void)
 		DispatchMessageW(&msg);
 	}
 
-	mglGfxClearOGLScreen();
+	mgl_gfx.gfx_api.ClearScreen(mgl_gfx.bkg_red, mgl_gfx.bkg_green, mgl_gfx.bkg_blue);
 }
 
 wchar_t *mglGfxGetParamw(int param)
@@ -632,26 +598,6 @@ bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff
 		return false;
 }
 
-static void mglGfxSetOGLScreen(void)
-{
-	glViewport(0, 0, mgl_gfx.win_width, mgl_gfx.win_height);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	gluOrtho2D(0, mgl_gfx.win_width, mgl_gfx.win_height, 0);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-}
-
-static void mglGfxClearOGLScreen(void)
-{
-	glClearColor(mgl_gfx.bkg_red / 255.0f, mgl_gfx.bkg_green / 255.0f, mgl_gfx.bkg_blue / 255.0f, 0.0f);
-
-	glClear(GL_COLOR_BUFFER_BIT);
-}
-
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	switch (msg) {
@@ -745,7 +691,7 @@ static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam,
 		case WM_SIZE:
 			mgl_gfx.win_width = LOWORD(lparam);
 			mgl_gfx.win_height = HIWORD(lparam);
-			mglGfxSetOGLScreen();
+			mgl_gfx.gfx_api.SetScreen(mgl_gfx.win_width, mgl_gfx.win_height);
 			return 0;
 		default:
 			return DefWindowProcW(hwnd, msg, wparam, lparam);

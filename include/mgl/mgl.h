@@ -33,6 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
+#include "mgl_gfx_api.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
