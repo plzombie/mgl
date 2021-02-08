@@ -38,6 +38,18 @@ extern "C" {
 #include <stdint.h>
 #include <Windows.h>
 
+enum {
+	MGL_GFX_TEX_FORMAT_R8G8B8,
+	MGL_GFX_TEX_FORMAT_R8G8B8A8,
+	MGL_GFX_TEX_FORMAT_GRAYSCALE
+};
+
+enum {
+	MGL_GFX_TEX_FILTER_REPEAT = 0x1,
+	MGL_GFX_TEX_FILTER_LINEAR_MIN = 0x2,
+	MGL_GFX_TEX_FILTER_LINEAR_MAG = 0x4
+};
+
 typedef struct {
 	size_t size;
 	bool (*InitGfxApi)(int win_width, int win_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc);
@@ -45,9 +57,12 @@ typedef struct {
 	void (*SetScreen)(int win_width, int win_height);
 	void (*ClearScreen)(int bkg_red, int bkg_green, int bkg_blue);
 	void (*SwapBuffers)(HDC wnd_dc);
-	void *CreateTexture;
+	bool (*CreateTexture)(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer, uintptr_t *tex_int);
 	void (*DestroyTexture)(uintptr_t tex_int_id);
-	void *DrawPicture;
+	void (*DrawTriangle)(bool no_texture, uintptr_t tex_int_id,
+		float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
+		float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
+		float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3);
 } mgl_gfx_api_type;
 
 #ifdef __cplusplus

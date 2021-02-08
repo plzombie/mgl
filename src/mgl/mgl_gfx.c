@@ -45,10 +45,8 @@ typedef struct {
 
 typedef struct {
 	mgl_gfx_api_type gfx_api;
-	intptr_t tex_int_id;
 	mgl_gfx_textures_type *textures;
 	size_t textures_max;
-	bool tex_have; // true если текстура tex_int_id установлена через glBindTexture
 	int win_width, win_height;
 	int mouse_x, mouse_y, mouse_wheel;
 	int mouse_key_l, mouse_key_r, mouse_key_m, mouse_key_4, mouse_key_5;
@@ -165,8 +163,7 @@ bool mglGfxInit(void)
 	SetFocus(mgl_gfx.wnd_handle);
 
 	mgl_gfx.textures = 0;
-	mgl_gfx.textures_max = mgl_gfx.tex_int_id = 0;
-	mgl_gfx.tex_have = false;
+	mgl_gfx.textures_max = 0;
 
 	mgl_gfx.mgl_init = true;
 
@@ -395,38 +392,10 @@ int mglGfxGetKey(int key)
 	return MGL_GFX_KEY_UP;
 }
 
-static GLint mglGfxTexGetIntFormat(int tex_format)
-{
-	switch(tex_format) {
-		case MGL_GFX_TEX_FORMAT_R8G8B8:
-			return GL_RGB;
-		case MGL_GFX_TEX_FORMAT_R8G8B8A8:
-			return GL_RGBA;
-		case MGL_GFX_TEX_FORMAT_GRAYSCALE:
-			return GL_LUMINANCE8;
-		default:
-			return 0;
-	}
-}
-
-static GLint mglGfxTexGetFormat(int tex_format)
-{
-	switch(tex_format) {
-		case MGL_GFX_TEX_FORMAT_R8G8B8:
-			return GL_RGB;
-		case MGL_GFX_TEX_FORMAT_R8G8B8A8:
-			return GL_RGBA;
-		case MGL_GFX_TEX_FORMAT_GRAYSCALE:
-			return GL_LUMINANCE;
-		default:
-			return 0;
-	}
-}
-
 size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer)
 {
-	GLuint gl_tex_id;
 	size_t tex_id = 0;
+	uintptr_t tex_int_id = 0;
 
 	// Аллокатор для текстур
 	if(mgl_gfx.textures_max == 0) {
@@ -462,43 +431,13 @@ size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_he
 		}
 	}
 
-	// Создание текстуры
-
-	glGetError(); // Сбрасываем флаги ошибки
-
-	glGenTextures(1, &gl_tex_id);
-	if(glGetError())
+	if(mgl_gfx.gfx_api.CreateTexture(tex_width, tex_height, tex_format, tex_filters, buffer, &tex_int_id) == false)
 		return 0;
 
-	glBindTexture(GL_TEXTURE_2D, gl_tex_id);
-
-	if(tex_filters & MGL_GFX_TEX_FILTER_LINEAR_MIN)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	else
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	if(tex_filters & MGL_GFX_TEX_FILTER_LINEAR_MAG)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	else
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	if(tex_filters & MGL_GFX_TEX_FILTER_REPEAT) {
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	} else {
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-	}
-
-	glTexImage2D(GL_TEXTURE_2D, 0, mglGfxTexGetIntFormat(tex_format), tex_width, tex_height, 0, mglGfxTexGetFormat(tex_format), GL_UNSIGNED_BYTE, buffer);
-
-	mgl_gfx.textures[tex_id].tex_int_id = gl_tex_id;
+	mgl_gfx.textures[tex_id].tex_int_id = tex_int_id;
 	mgl_gfx.textures[tex_id].tex_width = tex_width;
 	mgl_gfx.textures[tex_id].tex_height = tex_height;
 	mgl_gfx.textures[tex_id].tex_used = true;
-
-	if(mgl_gfx.tex_have)
-		glBindTexture(GL_TEXTURE_2D, (GLuint)(mgl_gfx.tex_int_id));
 
 	return tex_id + 1;
 }
@@ -519,7 +458,7 @@ void mglGfxDestroyTexture(size_t tex_id)
 bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r , int col_g, int col_b)
 {
 	float pic_width, pic_height;
-	float tex_start_x, tex_end_x, tex_start_y, tex_end_y;
+	float tex_start_x = 0.0f, tex_end_x = 0.0f, tex_start_y = 0.0f, tex_end_y = 0.0f;
 	bool no_texture;
 
 	if(!mgl_gfx.mgl_init)
@@ -541,24 +480,6 @@ bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff
 	pic_width = size_x * scale_x;
 	pic_height = size_y * scale_y;
 
-	// Установка текстуры
-	if(no_texture == true) {
-		if(mgl_gfx.tex_have == true) {
-			glDisable(GL_TEXTURE_2D);
-			mgl_gfx.tex_have = false;
-		}
-	} else {
-		if(mgl_gfx.tex_have == false) {
-			glEnable(GL_TEXTURE_2D);
-			mgl_gfx.tex_have = true;
-			glBindTexture(GL_TEXTURE_2D, (GLuint)(mgl_gfx.textures[tex_id - 1].tex_int_id));
-			mgl_gfx.tex_int_id = mgl_gfx.textures[tex_id - 1].tex_int_id;
-		} else if(mgl_gfx.tex_int_id != mgl_gfx.textures[tex_id - 1].tex_int_id) {
-			glBindTexture(GL_TEXTURE_2D, (GLuint)(mgl_gfx.textures[tex_id - 1].tex_int_id));
-			mgl_gfx.tex_int_id = mgl_gfx.textures[tex_id - 1].tex_int_id;
-		}
-	}
-
 	if(no_texture == false) {
 		tex_start_x = (float)(toff_x) / mgl_gfx.textures[tex_id - 1].tex_width;
 		tex_end_x = (float)(toff_x + size_x) / mgl_gfx.textures[tex_id - 1].tex_width;
@@ -567,27 +488,14 @@ bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff
 	}
 
 	// Отрисовка изображения
-	glBegin(GL_TRIANGLES);
-	if(no_texture == false) glTexCoord2f(tex_start_x, tex_start_y);
-	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
-	glVertex2f((float)off_x, (float)off_y);
-	if(no_texture == false) glTexCoord2f(tex_start_x, tex_end_y);
-	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
-	glVertex2f((float)off_x, (float)off_y + pic_height);
-	if(no_texture == false) glTexCoord2f(tex_end_x, tex_end_y);
-	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
-	glVertex2f((float)off_x + pic_width, (float)off_y + pic_height);
-
-	if(no_texture == false) glTexCoord2f(tex_start_x, tex_start_y);
-	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
-	glVertex2f((float)off_x, (float)off_y);
-	if(no_texture == false) glTexCoord2f(tex_end_x, tex_end_y);
-	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
-	glVertex2f((float)off_x + pic_width, (float)off_y + pic_height);
-	if(no_texture == false) glTexCoord2f(tex_end_x, tex_start_y);
-	glColor4f(col_r / 255.0f, col_g / 255.0f, col_b / 255.0f, 1.0f);
-	glVertex2f((float)off_x + pic_width, (float)off_y);
-	glEnd();
+	mgl_gfx.gfx_api.DrawTriangle(no_texture, mgl_gfx.textures[tex_id - 1].tex_int_id,
+		(float)off_x, (float)off_y, tex_start_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
+		(float)off_x, (float)off_y + pic_height, tex_start_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
+		(float)off_x + pic_width, (float)off_y + pic_height, tex_end_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f);
+	mgl_gfx.gfx_api.DrawTriangle(no_texture, mgl_gfx.textures[tex_id - 1].tex_int_id,
+		(float)off_x, (float)off_y, tex_start_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
+		(float)off_x + pic_width, (float)off_y + pic_height, tex_end_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
+		(float)off_x + pic_width, (float)off_y, tex_end_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f);
 
 	if(off_x <= mgl_gfx.mouse_x && off_x + pic_width > mgl_gfx.mouse_x &&
 		off_y <= mgl_gfx.mouse_y && off_y + pic_height > mgl_gfx.mouse_y)

@@ -31,13 +31,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <gl/GLU.h>
 
 static HGLRC mgl_gfx_wnd_glctx;
+static intptr_t mgl_gfx_tex_int_id;
+static bool mgl_gfx_tex_have; // true если текстура mgl_gfx_tex_int_id установлена через glBindTexture
 
 static bool mglGfxInitGfxApi(int win_width, int win_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc);
 static void mglGfxDestroyGfxApi(void);
 static void mglGfxSetScreen(int win_width, int win_height);
 static void mglGfxClearScreen(int bkg_red, int bkg_green, int bkg_blue);
 static void mglGfxSwapBuffers(HDC wnd_dc);
+static bool mglGfxCreateTexture(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer, uintptr_t *tex_int);
 static void mglGfxDestroyTexture(uintptr_t tex_int_id);
+static void mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_id,
+	float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
+	float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
+	float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3);
 
 mgl_gfx_api_type mglGfxGetOGL1Api(void)
 {
@@ -50,9 +57,9 @@ mgl_gfx_api_type mglGfxGetOGL1Api(void)
 	api.SetScreen = mglGfxSetScreen;
 	api.ClearScreen = mglGfxClearScreen;
 	api.SwapBuffers = mglGfxSwapBuffers;
-	//api.CreateTexture
+	api.CreateTexture = mglGfxCreateTexture;
 	api.DestroyTexture = mglGfxDestroyTexture;
-	//api.DrawPicture
+	api.DrawTriangle = mglGfxDrawTriangle;
 
 	return api;
 }
@@ -87,6 +94,9 @@ static bool mglGfxInitGfxApi(int win_width, int win_height, int bkg_red, int bkg
 	mglGfxSetScreen(win_width, win_height);
 	mglGfxClearScreen(bkg_red, bkg_green, bkg_blue);
 
+	mgl_gfx_tex_int_id = 0;
+	mgl_gfx_tex_have = false;
+
 	return true;
 }
 
@@ -116,6 +126,80 @@ static void mglGfxClearScreen(int bkg_red, int bkg_green, int bkg_blue)
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
+static GLint mglGfxTexGetIntFormat(int tex_format)
+{
+	switch(tex_format) {
+		case MGL_GFX_TEX_FORMAT_R8G8B8:
+			return GL_RGB;
+		case MGL_GFX_TEX_FORMAT_R8G8B8A8:
+			return GL_RGBA;
+		case MGL_GFX_TEX_FORMAT_GRAYSCALE:
+			return GL_LUMINANCE8;
+		default:
+			return 0;
+	}
+}
+
+static GLint mglGfxTexGetFormat(int tex_format)
+{
+	switch(tex_format) {
+		case MGL_GFX_TEX_FORMAT_R8G8B8:
+			return GL_RGB;
+		case MGL_GFX_TEX_FORMAT_R8G8B8A8:
+			return GL_RGBA;
+		case MGL_GFX_TEX_FORMAT_GRAYSCALE:
+			return GL_LUMINANCE;
+		default:
+			return 0;
+	}
+}
+
+static bool mglGfxCreateTexture(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer, uintptr_t *tex_int)
+{
+	GLuint gl_tex_id;
+
+	// Создание текстуры
+
+	glGetError(); // Сбрасываем флаги ошибки
+
+	glGenTextures(1, &gl_tex_id);
+	if(glGetError()) {
+		*tex_int = 0;
+		
+		return false;
+	}
+
+	glBindTexture(GL_TEXTURE_2D, gl_tex_id);
+
+	*tex_int = gl_tex_id;
+
+	if(tex_filters & MGL_GFX_TEX_FILTER_LINEAR_MIN)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	else
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	if(tex_filters & MGL_GFX_TEX_FILTER_LINEAR_MAG)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	else
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	if(tex_filters & MGL_GFX_TEX_FILTER_REPEAT) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	}
+	else {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	}
+
+	glTexImage2D(GL_TEXTURE_2D, 0, mglGfxTexGetIntFormat(tex_format), tex_width, tex_height, 0, mglGfxTexGetFormat(tex_format), GL_UNSIGNED_BYTE, buffer);
+
+	if(mgl_gfx_tex_have)
+		glBindTexture(GL_TEXTURE_2D, (GLuint)(mgl_gfx_tex_int_id));
+
+	return true;
+}
+
 static void mglGfxSwapBuffers(HDC wnd_dc)
 {
 	SwapBuffers(wnd_dc);
@@ -128,4 +212,44 @@ static void mglGfxDestroyTexture(uintptr_t tex_int_id)
 	gl_tex_id = (GLuint)(tex_int_id);
 
 	glDeleteTextures(1, &gl_tex_id);
+}
+
+static void mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_id, 
+	float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
+	float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
+	float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3)
+{
+	// Установка текстуры
+	if(no_texture == true) {
+		if(mgl_gfx_tex_have == true) {
+			glDisable(GL_TEXTURE_2D);
+			mgl_gfx_tex_have = false;
+		}
+	}
+	else {
+		if(mgl_gfx_tex_have == false) {
+			glEnable(GL_TEXTURE_2D);
+			mgl_gfx_tex_have = true;
+			glBindTexture(GL_TEXTURE_2D, (GLuint)(tex_int_id));
+			mgl_gfx_tex_int_id = tex_int_id;
+		} else if(mgl_gfx_tex_int_id != tex_int_id) {
+			glBindTexture(GL_TEXTURE_2D, (GLuint)(tex_int_id));
+			mgl_gfx_tex_int_id = tex_int_id;
+		}
+	}
+
+	// Отрисовка изображения
+	glBegin(GL_TRIANGLES);
+	if(no_texture == false) glTexCoord2f(tex_x1, tex_y1);
+	glColor4f(col_r1, col_g1, col_b1, 1.0f);
+	glVertex2f(x1, y1);
+
+	if(no_texture == false) glTexCoord2f(tex_x2, tex_y2);
+	glColor4f(col_r2, col_g2, col_b2, 1.0f);
+	glVertex2f(x2, y2);
+
+	if(no_texture == false) glTexCoord2f(tex_x3, tex_y3);
+	glColor4f(col_r3, col_g3, col_b3, 1.0f);
+	glVertex2f(x3, y3);
+	glEnd();
 }
