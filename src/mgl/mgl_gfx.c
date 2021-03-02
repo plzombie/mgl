@@ -72,7 +72,7 @@ bool mglGfxInit(void)
 	HINSTANCE instance;
 	DWORD style, ex_style;
 	RECT wnd_rect;
-	
+
 	if(mgl_gfx.mgl_init == true)
 		return false;
 
@@ -174,7 +174,7 @@ void mglGfxClose(void)
 {
 	size_t i;
 	HINSTANCE instance;
-	
+
 	if(mgl_gfx.mgl_init == false)
 		return;
 
@@ -248,7 +248,7 @@ void mglGfxUpdate(void)
 		DispatchMessageW(&msg);
 	}
 
-	
+
 }
 
 wchar_t *mglGfxGetParamw(int param)
@@ -264,7 +264,7 @@ wchar_t *mglGfxGetParamw(int param)
 bool mglGfxSetParamw(int param, wchar_t *value)
 {
 	(void)value;
-	
+
 	switch(param) {
 		case MGL_GFX_PARAMW_WIN_INPUT_CHARS:
 		default:
@@ -448,7 +448,7 @@ void mglGfxDestroyTexture(size_t tex_id)
 		return;
 
 	if(mgl_gfx.textures[tex_id - 1].tex_used == false)
-		return;	
+		return;
 
 	mgl_gfx.gfx_api.DestroyTexture(mgl_gfx.textures[tex_id - 1].tex_int_id);
 
@@ -488,11 +488,11 @@ bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff
 	}
 
 	// Отрисовка изображения
-	mgl_gfx.gfx_api.DrawTriangle(no_texture, mgl_gfx.textures[tex_id - 1].tex_int_id,
+	mgl_gfx.gfx_api.DrawTriangle(no_texture, no_texture?0:mgl_gfx.textures[tex_id - 1].tex_int_id,
 		(float)off_x, (float)off_y, tex_start_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
 		(float)off_x, (float)off_y + pic_height, tex_start_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
 		(float)off_x + pic_width, (float)off_y + pic_height, tex_end_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f);
-	mgl_gfx.gfx_api.DrawTriangle(no_texture, mgl_gfx.textures[tex_id - 1].tex_int_id,
+	mgl_gfx.gfx_api.DrawTriangle(no_texture, no_texture?0:mgl_gfx.textures[tex_id - 1].tex_int_id,
 		(float)off_x, (float)off_y, tex_start_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
 		(float)off_x + pic_width, (float)off_y + pic_height, tex_end_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
 		(float)off_x + pic_width, (float)off_y, tex_end_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f);
