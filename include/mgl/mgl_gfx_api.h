@@ -52,9 +52,9 @@ enum {
 
 typedef struct {
 	size_t size;
-	bool (*InitGfxApi)(int win_width, int win_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc);
+	bool (*InitGfxApi)(int win_width, int win_height, int viewport_width, int viewport_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc);
 	void (*DestroyGfxApi)(void);
-	void (*SetScreen)(int win_width, int win_height);
+	void (*SetScreen)(int win_width, int win_height, int viewport_width, int viewport_height);
 	void (*ClearScreen)(int bkg_red, int bkg_green, int bkg_blue);
 	void (*SwapBuffers)(HDC wnd_dc);
 	bool (*CreateTexture)(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer, uintptr_t *tex_int);

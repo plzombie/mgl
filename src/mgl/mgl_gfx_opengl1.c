@@ -34,9 +34,9 @@ static HGLRC mgl_gfx_wnd_glctx;
 static intptr_t mgl_gfx_tex_int_id;
 static bool mgl_gfx_tex_have; // true если текстура mgl_gfx_tex_int_id установлена через glBindTexture
 
-static bool mglGfxInitGfxApi(int win_width, int win_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc);
+static bool mglGfxInitGfxApi(int win_width, int win_height, int viewport_width, int viewport_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc);
 static void mglGfxDestroyGfxApi(void);
-static void mglGfxSetScreen(int win_width, int win_height);
+static void mglGfxSetScreen(int win_width, int win_height, int viewport_width, int viewport_height);
 static void mglGfxClearScreen(int bkg_red, int bkg_green, int bkg_blue);
 static void mglGfxSwapBuffers(HDC wnd_dc);
 static bool mglGfxCreateTexture(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer, uintptr_t *tex_int);
@@ -64,7 +64,7 @@ mgl_gfx_api_type mglGfxGetOGL1Api(void)
 	return api;
 }
 
-static bool mglGfxInitGfxApi(int win_width, int win_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc)
+static bool mglGfxInitGfxApi(int win_width, int win_height, int viewport_width, int viewport_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc)
 {
 	PIXELFORMATDESCRIPTOR pfd;
 	int pixelformat;
@@ -91,7 +91,7 @@ static bool mglGfxInitGfxApi(int win_width, int win_height, int bkg_red, int bkg
 
 	glDisable(GL_DEPTH_TEST);
 
-	mglGfxSetScreen(win_width, win_height);
+	mglGfxSetScreen(win_width, win_height, viewport_width, viewport_height);
 	mglGfxClearScreen(bkg_red, bkg_green, bkg_blue);
 
 	mgl_gfx_tex_int_id = 0;
@@ -106,14 +106,14 @@ static void mglGfxDestroyGfxApi(void)
 	wglDeleteContext(mgl_gfx_wnd_glctx);
 }
 
-static void mglGfxSetScreen(int win_width, int win_height)
+static void mglGfxSetScreen(int win_width, int win_height, int viewport_width, int viewport_height)
 {
 	glViewport(0, 0, win_width, win_height);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
-	gluOrtho2D(0, win_width, win_height, 0);
+	gluOrtho2D(0, viewport_width, viewport_height, 0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();

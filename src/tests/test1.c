@@ -38,6 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <wchar.h>
 
 static void PrintWindowParams(void);
+static void PrintWindowDpi(void);
 static void PrintKeys(void);
 static void PrintMouseButtons(void);
 static void PrintInputChars(void);
@@ -69,6 +70,7 @@ int main(void)
 
 		while(!mglGfxGetParami(MGL_GFX_PARAMI_NEED_EXIT)) {
 			PrintWindowParams();
+			PrintWindowDpi();
 			PrintKeys();
 			PrintMouseButtons();
 			PrintInputChars();
@@ -150,6 +152,21 @@ static void PrintWindowParams(void)
 	if(mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT) != winy) {
 		winy = mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT);
 		wprintf(L"winy: %d\n", winy);
+	}
+}
+
+static void PrintWindowDpi(void)
+{
+	static int dpix = 0, dpiy = 0;
+
+	if(mglGfxGetParami(MGL_GFX_PARAMI_WIN_DPIX) != dpix) {
+		dpix = mglGfxGetParami(MGL_GFX_PARAMI_WIN_DPIX);
+		wprintf(L"DpiX: %d\n", dpix);
+	}
+
+	if(mglGfxGetParami(MGL_GFX_PARAMI_WIN_DPIY) != dpiy) {
+		dpiy = mglGfxGetParami(MGL_GFX_PARAMI_WIN_DPIY);
+		wprintf(L"DpiY: %d\n", dpiy);
 	}
 }
 

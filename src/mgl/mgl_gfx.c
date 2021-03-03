@@ -26,7 +26,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define _WIN32_WINNT 0x0600
+#define _WIN32_WINNT 0x1000
 
 #include "../../include/mgl/mgl.h"
 
@@ -47,8 +47,9 @@ typedef struct {
 	mgl_gfx_api_type gfx_api;
 	mgl_gfx_textures_type *textures;
 	size_t textures_max;
-	int win_width, win_height;
-	int mouse_x, mouse_y, mouse_wheel;
+	int win_width, win_height, win_virt_width, win_virt_height;
+	int win_dpix, win_dpiy;
+	int mouse_x, mouse_y, mouse_wheel, mouse_virt_x, mouse_virt_y;
 	int mouse_key_l, mouse_key_r, mouse_key_m, mouse_key_4, mouse_key_5;
 	int bkg_red, bkg_green, bkg_blue;
 	char win_keys[256];
@@ -65,6 +66,8 @@ typedef struct {
 static mgl_gfx_type mgl_gfx;
 
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+// GetDpiForWindow
+// SetProcessDpiAwarenessContext
 
 bool mglGfxInit(void)
 {
@@ -75,6 +78,8 @@ bool mglGfxInit(void)
 
 	if(mgl_gfx.mgl_init == true)
 		return false;
+
+	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
 	instance = GetModuleHandle(NULL);
 
@@ -105,11 +110,16 @@ bool mglGfxInit(void)
 		return false;
 
 	// Get window style and size
-	if (mgl_gfx.win_width <= 0)
-		mgl_gfx.win_width = 640;
+	if (mgl_gfx.win_virt_width <= 0)
+		mgl_gfx.win_virt_width = 640;
 
-	if (mgl_gfx.win_height <= 0)
-		mgl_gfx.win_height = 480;
+	if (mgl_gfx.win_virt_height <= 0)
+		mgl_gfx.win_virt_height = 480;
+	
+	mgl_gfx.win_dpix = mgl_gfx.win_dpiy = GetDpiForSystem();
+
+	mgl_gfx.win_width = mgl_gfx.win_virt_width * mgl_gfx.win_dpix / 96;
+	mgl_gfx.win_height = mgl_gfx.win_virt_height * mgl_gfx.win_dpiy / 96;
 
 	memset(&wnd_rect, 0, sizeof(RECT));
 	wnd_rect.left = wnd_rect.top = 0;
@@ -141,6 +151,11 @@ bool mglGfxInit(void)
 		return false;
 	}
 
+	mgl_gfx.win_dpix = mgl_gfx.win_dpiy = GetDpiForWindow(mgl_gfx.wnd_handle);
+
+	mgl_gfx.win_virt_width = mgl_gfx.win_width * 96 / mgl_gfx.win_dpix;
+	mgl_gfx.win_virt_height = mgl_gfx.win_height * 96 / mgl_gfx.win_dpiy;
+
 	// Choose and set pixel format
 	mgl_gfx.wnd_dc = GetDC(mgl_gfx.wnd_handle);
 	if(mgl_gfx.wnd_dc == NULL) {
@@ -150,7 +165,7 @@ bool mglGfxInit(void)
 		return false;
 	}
 
-	if(!mgl_gfx.gfx_api.InitGfxApi(mgl_gfx.win_width, mgl_gfx.win_height, mgl_gfx.bkg_red, mgl_gfx.bkg_green, mgl_gfx.bkg_blue, mgl_gfx.wnd_dc)) {
+	if(!mgl_gfx.gfx_api.InitGfxApi(mgl_gfx.win_width, mgl_gfx.win_height, mgl_gfx.win_width * 96 / mgl_gfx.win_dpix, mgl_gfx.win_height * 96 / mgl_gfx.win_dpiy, mgl_gfx.bkg_red, mgl_gfx.bkg_green, mgl_gfx.bkg_blue, mgl_gfx.wnd_dc)) {
 		ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
 		DestroyWindow(mgl_gfx.wnd_handle);
 		UnregisterClassW(L"MGLWindowClass", instance);
@@ -278,9 +293,9 @@ int mglGfxGetParami(int param)
 		case MGL_GFX_PARAMI_INIT:
 			return mgl_gfx.mgl_init;
 		case MGL_GFX_PARAMI_WIN_WIDTH:
-			return mgl_gfx.win_width;
+			return mgl_gfx.win_virt_width;
 		case MGL_GFX_PARAMI_WIN_HEIGHT:
-			return mgl_gfx.win_height;
+			return mgl_gfx.win_virt_height;
 		case MGL_GFX_PARAMI_NEED_EXIT:
 			return mgl_gfx.mgl_need_exit;
 		case MGL_GFX_PARAMI_BKG_RED:
@@ -290,9 +305,9 @@ int mglGfxGetParami(int param)
 		case MGL_GFX_PARAMI_BKG_BLUE:
 			return mgl_gfx.bkg_blue;
 		case MGL_GFX_PARAMI_MOUSE_X:
-			return mgl_gfx.mouse_x;
+			return mgl_gfx.mouse_virt_x;
 		case MGL_GFX_PARAMI_MOUSE_Y:
-			return mgl_gfx.mouse_y;
+			return mgl_gfx.mouse_virt_y;
 		case MGL_GFX_PARAMI_MOUSE_KEY_LEFT:
 			return mgl_gfx.mouse_key_l;
 		case MGL_GFX_PARAMI_MOUSE_KEY_RIGHT:
@@ -305,6 +320,10 @@ int mglGfxGetParami(int param)
 			return mgl_gfx.mouse_key_5;
 		case MGL_GFX_PARAMI_MOUSE_WHEEL:
 			return mgl_gfx.mouse_wheel;
+		case MGL_GFX_PARAMI_WIN_DPIX:
+			return mgl_gfx.win_dpix;
+		case MGL_GFX_PARAMI_WIN_DPIY:
+			return mgl_gfx.win_dpiy;
 		default:
 			return 0;
 	}
@@ -316,9 +335,9 @@ bool mglGfxSetParami(int param, int value)
 		case MGL_GFX_PARAMI_INIT:
 			return false;
 		case MGL_GFX_PARAMI_WIN_WIDTH:
-			return mglGfxSetScreen(value, mgl_gfx.win_height, MGL_GFX_WINDOW_MODE_WINDOWED, 0);
+			return mglGfxSetScreen(value, mgl_gfx.win_virt_height, MGL_GFX_WINDOW_MODE_WINDOWED, 0);
 		case MGL_GFX_PARAMI_WIN_HEIGHT:
-			return mglGfxSetScreen(mgl_gfx.win_width, value, MGL_GFX_WINDOW_MODE_WINDOWED, 0);
+			return mglGfxSetScreen(mgl_gfx.win_virt_width, value, MGL_GFX_WINDOW_MODE_WINDOWED, 0);
 		case MGL_GFX_PARAMI_NEED_EXIT:
 			mgl_gfx.mgl_need_exit = value;
 			return true;
@@ -354,6 +373,8 @@ bool mglGfxSetParami(int param, int value)
 		case MGL_GFX_PARAMI_MOUSE_KEY_4:
 		case MGL_GFX_PARAMI_MOUSE_KEY_5:
 		case MGL_GFX_PARAMI_MOUSE_WHEEL:
+		case MGL_GFX_PARAMI_WIN_DPIX:
+		case MGL_GFX_PARAMI_WIN_DPIY:
 		default:
 			return false;
 	}
@@ -378,8 +399,11 @@ bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
 	if(winy == 0 && mgl_gfx.win_height != 0)
 		return false;
 
-	mgl_gfx.win_width = winx;
-	mgl_gfx.win_height = winy;
+	mgl_gfx.win_virt_width = winx;
+	mgl_gfx.win_virt_height = winy;
+
+	mgl_gfx.win_width = mgl_gfx.win_virt_width * mgl_gfx.win_dpix / 96;
+	mgl_gfx.win_height = mgl_gfx.win_virt_height * mgl_gfx.win_dpiy / 96;
 
 	return true;
 }
@@ -497,8 +521,8 @@ bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff
 		(float)off_x + pic_width, (float)off_y + pic_height, tex_end_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
 		(float)off_x + pic_width, (float)off_y, tex_end_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f);
 
-	if(off_x <= mgl_gfx.mouse_x && off_x + pic_width > mgl_gfx.mouse_x &&
-		off_y <= mgl_gfx.mouse_y && off_y + pic_height > mgl_gfx.mouse_y)
+	if(off_x <= mgl_gfx.mouse_virt_x && off_x + pic_width > mgl_gfx.mouse_virt_x &&
+		off_y <= mgl_gfx.mouse_virt_y && off_y + pic_height > mgl_gfx.mouse_virt_y)
 		return true;
 	else
 		return false;
@@ -506,6 +530,8 @@ bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff
 
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
+	RECT *rect;
+
 	switch (msg) {
 		case WM_CHAR:
 		{
@@ -589,6 +615,8 @@ static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam,
 		case WM_MOUSEMOVE:
 			mgl_gfx.mouse_x = GET_X_LPARAM(lparam);
 			mgl_gfx.mouse_y = GET_Y_LPARAM(lparam);
+			mgl_gfx.mouse_virt_x = mgl_gfx.mouse_x * 96 / mgl_gfx.win_dpix;
+			mgl_gfx.mouse_virt_y = mgl_gfx.mouse_y * 96 / mgl_gfx.win_dpiy;
 
 			return 0;
 		case WM_CLOSE:
@@ -597,7 +625,19 @@ static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam,
 		case WM_SIZE:
 			mgl_gfx.win_width = LOWORD(lparam);
 			mgl_gfx.win_height = HIWORD(lparam);
-			mgl_gfx.gfx_api.SetScreen(mgl_gfx.win_width, mgl_gfx.win_height);
+			mgl_gfx.win_virt_width = mgl_gfx.win_width * 96 / mgl_gfx.win_dpix;
+			mgl_gfx.win_virt_height = mgl_gfx.win_height * 96 / mgl_gfx.win_dpiy;
+			mgl_gfx.gfx_api.SetScreen(mgl_gfx.win_width, mgl_gfx.win_height, mgl_gfx.win_virt_width, mgl_gfx.win_virt_height);
+			return 0;
+		case WM_DPICHANGED:
+			mgl_gfx.win_dpix = LOWORD(wparam);
+			mgl_gfx.win_dpiy = HIWORD(wparam);
+			mgl_gfx.mouse_virt_x = mgl_gfx.mouse_x * 96 / mgl_gfx.win_dpix;
+			mgl_gfx.mouse_virt_y = mgl_gfx.mouse_y * 96 / mgl_gfx.win_dpiy;
+
+			rect = (RECT *)lparam;
+			SetWindowPos(mgl_gfx.wnd_handle, NULL, rect->left, rect->top, rect->right - rect->left, rect->bottom - rect->top, SWP_NOZORDER | SWP_NOACTIVATE);
+
 			return 0;
 		default:
 			return DefWindowProcW(hwnd, msg, wparam, lparam);
