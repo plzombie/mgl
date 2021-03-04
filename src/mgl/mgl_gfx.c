@@ -49,6 +49,7 @@ typedef struct {
 	size_t textures_max;
 	int win_width, win_height, win_virt_width, win_virt_height;
 	int win_dpix, win_dpiy;
+	int win_mode;
 	int mouse_x, mouse_y, mouse_wheel, mouse_virt_x, mouse_virt_y;
 	int mouse_key_l, mouse_key_r, mouse_key_m, mouse_key_4, mouse_key_5;
 	int bkg_red, bkg_green, bkg_blue;
@@ -66,7 +67,11 @@ typedef struct {
 static mgl_gfx_type mgl_gfx;
 
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+static void mglGfxSetWindowSize(DWORD style, DWORD ex_style);
+static DWORD mglGfxGetStyle(int mode);
+static DWORD mglGfxGetExStyle(int mode);
 // GetDpiForWindow
+// AdjustWindowRectExForDpi
 // SetProcessDpiAwarenessContext
 
 bool mglGfxInit(void)
@@ -74,7 +79,6 @@ bool mglGfxInit(void)
 	WNDCLASSW wnd_class;
 	HINSTANCE instance;
 	DWORD style, ex_style;
-	RECT wnd_rect;
 
 	if(mgl_gfx.mgl_init == true)
 		return false;
@@ -115,21 +119,12 @@ bool mglGfxInit(void)
 
 	if (mgl_gfx.win_virt_height <= 0)
 		mgl_gfx.win_virt_height = 480;
-	
-	mgl_gfx.win_dpix = mgl_gfx.win_dpiy = GetDpiForSystem();
 
-	mgl_gfx.win_width = mgl_gfx.win_virt_width * mgl_gfx.win_dpix / 96;
-	mgl_gfx.win_height = mgl_gfx.win_virt_height * mgl_gfx.win_dpiy / 96;
+	if(mgl_gfx.win_mode <= 0)
+		mgl_gfx.win_mode = MGL_GFX_WINDOW_MODE_WINDOWED;
 
-	memset(&wnd_rect, 0, sizeof(RECT));
-	wnd_rect.left = wnd_rect.top = 0;
-	wnd_rect.right = mgl_gfx.win_width;
-	wnd_rect.bottom = mgl_gfx.win_height;
-
-	ex_style = WS_EX_OVERLAPPEDWINDOW;
-	style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-
-	AdjustWindowRectEx(&wnd_rect, style, 0, ex_style);
+	ex_style = mglGfxGetExStyle(mgl_gfx.win_mode);
+	style = mglGfxGetStyle(mgl_gfx.win_mode);
 
 	// Create window
 	mgl_gfx.wnd_handle = CreateWindowExW(
@@ -138,7 +133,7 @@ bool mglGfxInit(void)
 		L"MGL",
 		style,
 		CW_USEDEFAULT, CW_USEDEFAULT,
-		wnd_rect.right-wnd_rect.left, wnd_rect.bottom-wnd_rect.top,
+		0, 0, //wnd_rect.right-wnd_rect.left, wnd_rect.bottom-wnd_rect.top,
 		NULL,
 		NULL,
 		instance,
@@ -153,8 +148,10 @@ bool mglGfxInit(void)
 
 	mgl_gfx.win_dpix = mgl_gfx.win_dpiy = GetDpiForWindow(mgl_gfx.wnd_handle);
 
-	mgl_gfx.win_virt_width = mgl_gfx.win_width * 96 / mgl_gfx.win_dpix;
-	mgl_gfx.win_virt_height = mgl_gfx.win_height * 96 / mgl_gfx.win_dpiy;
+	mgl_gfx.win_width = mgl_gfx.win_virt_width * mgl_gfx.win_dpix / 96;
+	mgl_gfx.win_height = mgl_gfx.win_virt_height * mgl_gfx.win_dpiy / 96;
+
+	mglGfxSetWindowSize(style, ex_style);
 
 	// Choose and set pixel format
 	mgl_gfx.wnd_dc = GetDC(mgl_gfx.wnd_handle);
@@ -324,6 +321,8 @@ int mglGfxGetParami(int param)
 			return mgl_gfx.win_dpix;
 		case MGL_GFX_PARAMI_WIN_DPIY:
 			return mgl_gfx.win_dpiy;
+		case MGL_GFX_PARAMI_WIN_MODE:
+			return mgl_gfx.win_mode;
 		default:
 			return 0;
 	}
@@ -375,6 +374,9 @@ bool mglGfxSetParami(int param, int value)
 		case MGL_GFX_PARAMI_MOUSE_WHEEL:
 		case MGL_GFX_PARAMI_WIN_DPIX:
 		case MGL_GFX_PARAMI_WIN_DPIY:
+			return false;
+		case MGL_GFX_PARAMI_WIN_MODE:
+			return mglGfxSetScreen(mgl_gfx.win_virt_width, mgl_gfx.win_virt_height, value, 0);
 		default:
 			return false;
 	}
@@ -383,9 +385,6 @@ bool mglGfxSetParami(int param, int value)
 bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
 {
 	(void)flags;
-
-	if(mgl_gfx.mgl_init)
-		return false;
 
 	if(mode != MGL_GFX_WINDOW_MODE_WINDOWED)
 		return false;
@@ -399,11 +398,15 @@ bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
 	if(winy == 0 && mgl_gfx.win_height != 0)
 		return false;
 
+	mgl_gfx.win_mode = mode;
 	mgl_gfx.win_virt_width = winx;
 	mgl_gfx.win_virt_height = winy;
 
 	mgl_gfx.win_width = mgl_gfx.win_virt_width * mgl_gfx.win_dpix / 96;
 	mgl_gfx.win_height = mgl_gfx.win_virt_height * mgl_gfx.win_dpiy / 96;
+
+	if(mgl_gfx.mgl_init)
+		mglGfxSetWindowSize(mglGfxGetStyle(mgl_gfx.win_mode), mglGfxGetExStyle(mgl_gfx.win_mode));
 
 	return true;
 }
@@ -641,5 +644,36 @@ static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam,
 			return 0;
 		default:
 			return DefWindowProcW(hwnd, msg, wparam, lparam);
+	}
+}
+
+static void mglGfxSetWindowSize(DWORD style, DWORD ex_style)
+{
+	RECT wnd_rect;
+
+	memset(&wnd_rect, 0, sizeof(RECT));
+	wnd_rect.left = wnd_rect.top = 0;
+	wnd_rect.right = mgl_gfx.win_width;
+	wnd_rect.bottom = mgl_gfx.win_height;
+	AdjustWindowRectExForDpi(&wnd_rect, style, 0, ex_style, mgl_gfx.win_dpix);
+
+	SetWindowPos(mgl_gfx.wnd_handle, NULL, 0, 0, wnd_rect.right - wnd_rect.left, wnd_rect.bottom - wnd_rect.top, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
+}
+
+static DWORD mglGfxGetStyle(int mode)
+{
+	switch(mode) {
+		case MGL_GFX_WINDOW_MODE_WINDOWED:
+		default:
+			return WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+	}
+}
+
+static DWORD mglGfxGetExStyle(int mode)
+{
+	switch(mode) {
+		case MGL_GFX_WINDOW_MODE_WINDOWED:
+		default:
+			return WS_EX_OVERLAPPEDWINDOW;
 	}
 }

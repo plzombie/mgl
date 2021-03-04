@@ -46,7 +46,7 @@ static size_t CreateTextureWithStbImage(char *filename, int tex_filters);
 
 int main(void)
 {
-	int winx, winy, mouse_x, mouse_y, mouse_bl, color_red = 160, color_green = 64, color_blue = 192;
+	int winx, winy, winmode = MGL_GFX_WINDOW_MODE_WINDOWED, mouse_x, mouse_y, mouse_bl, color_red = 160, color_green = 64, color_blue = 192;
 	size_t pic;
 	bool block_hovered = false;
 
@@ -69,6 +69,15 @@ int main(void)
 			wprintf(L"Pictures not created\n");
 
 		while(!mglGfxGetParami(MGL_GFX_PARAMI_NEED_EXIT)) {
+			if(mglGfxGetKey(VK_F1) == MGL_GFX_KEY_JUST_PRESSED)
+				mglGfxSetScreen(320, 240, winmode, 0);
+			else if(mglGfxGetKey(VK_F2) == MGL_GFX_KEY_JUST_PRESSED)
+				mglGfxSetScreen(640, 480, winmode, 0);
+			else if(mglGfxGetKey(VK_F3) == MGL_GFX_KEY_JUST_PRESSED)
+				mglGfxSetScreen(800, 600, winmode, 0);
+			else if(mglGfxGetKey(VK_F4) == MGL_GFX_KEY_JUST_PRESSED)
+				mglGfxSetScreen(1024, 768, winmode, 0);
+
 			PrintWindowParams();
 			PrintWindowDpi();
 			PrintKeys();
