@@ -70,9 +70,24 @@ static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam,
 static void mglGfxSetWindowSize(DWORD style, DWORD ex_style);
 static DWORD mglGfxGetStyle(int mode);
 static DWORD mglGfxGetExStyle(int mode);
-// GetDpiForWindow
-// AdjustWindowRectExForDpi
-// SetProcessDpiAwarenessContext
+static UINT mglGfxGetDpiForWindow(HWND hwnd);
+static void mglGfxLoadSystemFuncs(void);
+
+#ifndef DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
+DECLARE_HANDLE(DPI_AWARENESS_CONTEXT);
+
+#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((DPI_AWARENESS_CONTEXT)-4)
+#endif
+#ifndef WM_DPICHANGED
+#define WM_DPICHANGED 0x02E0
+#endif
+
+typedef BOOL (WINAPI *SetProcessDpiAwarenessContext_type)(DPI_AWARENESS_CONTEXT value);
+typedef BOOL (WINAPI *AdjustWindowRectExForDpi_type)(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle, UINT dpi);
+typedef UINT (WINAPI *GetDpiForWindow_type)(HWND hwnd);
+static SetProcessDpiAwarenessContext_type SetProcessDpiAwarenessContext_ptr;
+static AdjustWindowRectExForDpi_type AdjustWindowRectExForDpi_ptr;
+static GetDpiForWindow_type GetDpiForWindow_ptr;
 
 bool mglGfxInit(void)
 {
@@ -83,7 +98,10 @@ bool mglGfxInit(void)
 	if(mgl_gfx.mgl_init == true)
 		return false;
 
-	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+	mglGfxLoadSystemFuncs();
+
+	if(SetProcessDpiAwarenessContext_ptr)
+		SetProcessDpiAwarenessContext_ptr(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
 	instance = GetModuleHandle(NULL);
 
@@ -146,7 +164,7 @@ bool mglGfxInit(void)
 		return false;
 	}
 
-	mgl_gfx.win_dpix = mgl_gfx.win_dpiy = GetDpiForWindow(mgl_gfx.wnd_handle);
+	mgl_gfx.win_dpix = mgl_gfx.win_dpiy = mglGfxGetDpiForWindow(mgl_gfx.wnd_handle);
 
 	mgl_gfx.win_width = mgl_gfx.win_virt_width * mgl_gfx.win_dpix / 96;
 	mgl_gfx.win_height = mgl_gfx.win_virt_height * mgl_gfx.win_dpiy / 96;
@@ -655,7 +673,10 @@ static void mglGfxSetWindowSize(DWORD style, DWORD ex_style)
 	wnd_rect.left = wnd_rect.top = 0;
 	wnd_rect.right = mgl_gfx.win_width;
 	wnd_rect.bottom = mgl_gfx.win_height;
-	AdjustWindowRectExForDpi(&wnd_rect, style, 0, ex_style, mgl_gfx.win_dpix);
+	if(AdjustWindowRectExForDpi_ptr)
+		AdjustWindowRectExForDpi_ptr(&wnd_rect, style, 0, ex_style, mgl_gfx.win_dpix);
+	else
+		AdjustWindowRectEx(&wnd_rect, style, 0, ex_style);
 
 	SetWindowPos(mgl_gfx.wnd_handle, NULL, 0, 0, wnd_rect.right - wnd_rect.left, wnd_rect.bottom - wnd_rect.top, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
 }
@@ -676,4 +697,30 @@ static DWORD mglGfxGetExStyle(int mode)
 		default:
 			return WS_EX_OVERLAPPEDWINDOW;
 	}
+}
+
+static UINT mglGfxGetDpiForWindow(HWND hwnd)
+{
+	if(GetDpiForWindow_ptr)
+		return GetDpiForWindow_ptr(hwnd);
+	else
+		return 96;
+}
+
+static void mglGfxLoadSystemFuncs(void)
+{
+	HANDLE /*shcore, */user32;
+
+	user32 = GetModuleHandleW(L"User32.dll");
+	if(user32) {
+		SetProcessDpiAwarenessContext_ptr = (SetProcessDpiAwarenessContext_type)GetProcAddress(user32, "SetProcessDpiAwarenessContext");
+		AdjustWindowRectExForDpi_ptr = (AdjustWindowRectExForDpi_type)GetProcAddress(user32, "AdjustWindowRectExForDpi");
+		GetDpiForWindow_ptr = (GetDpiForWindow_type)GetProcAddress(user32, "GetDpiForWindow");
+	}
+
+	/*shcore = GetModuleHandleW(L"Shcore.dll");
+	if(!shcore) shcore = LoadLibraryW(L"Shcore.dll");
+	if(shcore) {
+		//	SetProcessDpiAwarenessContext_ptr = (SetProcessDpiAwarenessContext_type)GetProcAddress(shcore, "SetProcessDpiAwarenessContext");
+	}*/
 }
