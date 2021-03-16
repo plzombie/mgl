@@ -69,6 +69,8 @@ static bool mglGfxInitGfxApi(int win_width, int win_height, int viewport_width, 
 	PIXELFORMATDESCRIPTOR pfd;
 	int pixelformat;
 
+	// Choose and set pixel format
+
 	memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
 	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
 	pfd.nVersion = 1;

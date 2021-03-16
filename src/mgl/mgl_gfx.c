@@ -30,6 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../../include/mgl/mgl.h"
 
+#include "mgl_gfx.h"
 #include "mgl_gfx_opengl1.h"
 
 #include <Windows.h>
@@ -37,34 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <gl/GLU.h>
 
-typedef struct {
-	unsigned int tex_width, tex_height;
-	uintptr_t tex_int_id;
-	bool tex_used;
-} mgl_gfx_textures_type;
-
-typedef struct {
-	mgl_gfx_api_type gfx_api;
-	mgl_gfx_textures_type *textures;
-	size_t textures_max;
-	int win_width, win_height, win_virt_width, win_virt_height;
-	int win_dpix, win_dpiy;
-	int win_mode;
-	int mouse_x, mouse_y, mouse_wheel, mouse_virt_x, mouse_virt_y;
-	int mouse_key_l, mouse_key_r, mouse_key_m, mouse_key_4, mouse_key_5;
-	int bkg_red, bkg_green, bkg_blue;
-	char win_keys[256];
-	wchar_t *win_input_chars;
-	size_t win_input_chars_max;
-	HWND wnd_handle;
-	HDC wnd_dc;
-	ATOM wnd_class_atom;
-	HGLRC wnd_glctx;
-	bool mgl_init;
-	bool mgl_need_exit;
-} mgl_gfx_type;
-
-static mgl_gfx_type mgl_gfx;
+mgl_gfx_type mgl_gfx;
 
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 static void mglGfxSetWindowSize(DWORD style, DWORD ex_style, bool mode_changed);
@@ -162,7 +136,7 @@ bool mglGfxInit(void)
 		L"MGL",
 		style,
 		CW_USEDEFAULT, CW_USEDEFAULT,
-		0, 0, //wnd_rect.right-wnd_rect.left, wnd_rect.bottom-wnd_rect.top,
+		0, 0,
 		NULL,
 		NULL,
 		instance,
@@ -200,8 +174,6 @@ bool mglGfxInit(void)
 
 		mglGfxSetWindowSize(style, ex_style, false);
 	}
-
-	// Choose and set pixel format
 
 	if(!mgl_gfx.gfx_api.InitGfxApi(mgl_gfx.win_width, mgl_gfx.win_height, mgl_gfx.win_width * 96 / mgl_gfx.win_dpix, mgl_gfx.win_height * 96 / mgl_gfx.win_dpiy, mgl_gfx.bkg_red, mgl_gfx.bkg_green, mgl_gfx.bkg_blue, mgl_gfx.wnd_dc)) {
 		ReleaseDC(mgl_gfx.wnd_handle, mgl_gfx.wnd_dc);
@@ -476,118 +448,6 @@ int mglGfxGetKey(int key)
 		return mgl_gfx.win_keys[key];
 
 	return MGL_GFX_KEY_UP;
-}
-
-size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer)
-{
-	size_t tex_id = 0;
-	uintptr_t tex_int_id = 0;
-
-	// Аллокатор для текстур
-	if(mgl_gfx.textures_max == 0) {
-		mgl_gfx.textures_max = 2;
-		mgl_gfx.textures = malloc(mgl_gfx.textures_max * sizeof(mgl_gfx_textures_type));
-		if(!mgl_gfx.textures)
-			return 0;
-
-		memset(mgl_gfx.textures, 0, mgl_gfx.textures_max * sizeof(mgl_gfx_textures_type));
-	} else {
-		size_t i;
-
-		for(i = 0; i < mgl_gfx.textures_max; i++)
-			if(mgl_gfx.textures[i].tex_used == false)
-				break;
-
-		if(i < mgl_gfx.textures_max)
-			tex_id = i;
-		else {
-			mgl_gfx_textures_type *_textures;
-			size_t _textures_max;
-
-			_textures_max = mgl_gfx.textures_max * 2;
-			_textures = realloc(mgl_gfx.textures, _textures_max * sizeof(mgl_gfx_textures_type));
-			if(!_textures)
-				return 0;
-
-			tex_id = mgl_gfx.textures_max;
-			memset(mgl_gfx.textures + mgl_gfx.textures_max, 0, (_textures_max - mgl_gfx.textures_max) * sizeof(mgl_gfx_textures_type));
-
-			mgl_gfx.textures = _textures;
-			mgl_gfx.textures_max = _textures_max;
-		}
-	}
-
-	if(mgl_gfx.gfx_api.CreateTexture(tex_width, tex_height, tex_format, tex_filters, buffer, &tex_int_id) == false)
-		return 0;
-
-	mgl_gfx.textures[tex_id].tex_int_id = tex_int_id;
-	mgl_gfx.textures[tex_id].tex_width = tex_width;
-	mgl_gfx.textures[tex_id].tex_height = tex_height;
-	mgl_gfx.textures[tex_id].tex_used = true;
-
-	return tex_id + 1;
-}
-
-void mglGfxDestroyTexture(size_t tex_id)
-{
-	if(tex_id == 0 || tex_id > mgl_gfx.textures_max)
-		return;
-
-	if(mgl_gfx.textures[tex_id - 1].tex_used == false)
-		return;
-
-	mgl_gfx.gfx_api.DestroyTexture(mgl_gfx.textures[tex_id - 1].tex_int_id);
-
-	mgl_gfx.textures[tex_id - 1].tex_used = false;
-}
-
-bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r , int col_g, int col_b)
-{
-	float pic_width, pic_height;
-	float tex_start_x = 0.0f, tex_end_x = 0.0f, tex_start_y = 0.0f, tex_end_y = 0.0f;
-	bool no_texture;
-
-	if(!mgl_gfx.mgl_init)
-		return false;
-
-	if(tex_id == 0 || tex_id > mgl_gfx.textures_max)
-		no_texture = true;
-	else if(mgl_gfx.textures[tex_id - 1].tex_used == false)
-		no_texture = true;
-	else
-		no_texture = false;
-
-	if(size_x <= 0 || size_y <= 0 || scale_x <= 0 || scale_y <= 0)
-		return false;
-
-	if(col_r < 0 || col_r > 255 || col_g < 0 || col_g > 255 || col_b < 0 || col_b > 255)
-		return false;
-
-	pic_width = size_x * scale_x;
-	pic_height = size_y * scale_y;
-
-	if(no_texture == false) {
-		tex_start_x = (float)(toff_x) / mgl_gfx.textures[tex_id - 1].tex_width;
-		tex_end_x = (float)(toff_x + size_x) / mgl_gfx.textures[tex_id - 1].tex_width;
-		tex_start_y = (float)(toff_y) / mgl_gfx.textures[tex_id - 1].tex_height;
-		tex_end_y = (float)(toff_y + size_y) / mgl_gfx.textures[tex_id - 1].tex_height;
-	}
-
-	// Отрисовка изображения
-	mgl_gfx.gfx_api.DrawTriangle(no_texture, no_texture?0:mgl_gfx.textures[tex_id - 1].tex_int_id,
-		(float)off_x, (float)off_y, tex_start_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
-		(float)off_x, (float)off_y + pic_height, tex_start_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
-		(float)off_x + pic_width, (float)off_y + pic_height, tex_end_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f);
-	mgl_gfx.gfx_api.DrawTriangle(no_texture, no_texture?0:mgl_gfx.textures[tex_id - 1].tex_int_id,
-		(float)off_x, (float)off_y, tex_start_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
-		(float)off_x + pic_width, (float)off_y + pic_height, tex_end_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
-		(float)off_x + pic_width, (float)off_y, tex_end_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f);
-
-	if(off_x <= mgl_gfx.mouse_virt_x && off_x + pic_width > mgl_gfx.mouse_virt_x &&
-		off_y <= mgl_gfx.mouse_virt_y && off_y + pic_height > mgl_gfx.mouse_virt_y)
-		return true;
-	else
-		return false;
 }
 
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
