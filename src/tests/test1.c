@@ -83,6 +83,20 @@ int main(void)
 			else if(mglGfxGetKey(VK_F4) == MGL_GFX_KEY_JUST_PRESSED)
 				mglGfxSetScreen(1024, 768, winmode, 0);
 
+			winx = mglGfxGetParami(MGL_GFX_PARAMI_WIN_WIDTH);
+			winy = mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT);
+
+			if(mglGfxGetKey(VK_F5) == MGL_GFX_KEY_JUST_PRESSED) {
+				winmode = MGL_GFX_WINDOW_MODE_WINDOWED;
+				mglGfxSetScreen(winx, winy, winmode, 0);
+			} else if(mglGfxGetKey(VK_F6) == MGL_GFX_KEY_JUST_PRESSED) {
+				winmode = MGL_GFX_WINDOW_MODE_WINDOWED_FIXED;
+				mglGfxSetScreen(winx, winy, winmode, 0);
+			} else if(mglGfxGetKey(VK_F7) == MGL_GFX_KEY_JUST_PRESSED) {
+				winmode = MGL_GFX_WINDOW_MODE_FULLSCREEN;
+				mglGfxSetScreen(winx, winy, winmode, 0);
+			}
+
 			PrintWindowParams();
 			PrintWindowDpi();
 			PrintKeys();
@@ -92,9 +106,6 @@ int main(void)
 			mouse_x = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_X);
 			mouse_y = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_Y);
 			mouse_bl = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_LEFT);
-
-			winx = mglGfxGetParami(MGL_GFX_PARAMI_WIN_WIDTH);
-			winy = mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT);
 
 			mglGfxDrawPicture(0, mouse_x, mouse_y, 0, 0, 16, 16, 1.0f, 2.0f, 64, 192, 128);
 
