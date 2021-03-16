@@ -71,6 +71,9 @@ int main(void)
 			wprintf(L"Pictures not created\n");
 
 		while(!mglGfxGetParami(MGL_GFX_PARAMI_NEED_EXIT)) {
+			if(mglGfxGetKey(VK_ESCAPE) != MGL_GFX_KEY_UP)
+				break;
+
 			if(mglGfxGetKey(VK_F1) == MGL_GFX_KEY_JUST_PRESSED)
 				mglGfxSetScreen(320, 240, winmode, 0);
 			else if(mglGfxGetKey(VK_F2) == MGL_GFX_KEY_JUST_PRESSED)

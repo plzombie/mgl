@@ -96,6 +96,7 @@ bool mglGfxInit(void)
 	WNDCLASSW wnd_class;
 	HINSTANCE instance;
 	DWORD style, ex_style;
+	int winx, winy;
 
 	if(mgl_gfx.mgl_init == true)
 		return false;
@@ -145,8 +146,14 @@ bool mglGfxInit(void)
 	if(mgl_gfx.win_mode <= 0)
 		mgl_gfx.win_mode = MGL_GFX_WINDOW_MODE_WINDOWED;
 
+	mgl_gfx.win_dpix = mgl_gfx.win_dpiy = 96;
+
 	ex_style = mglGfxGetExStyle(mgl_gfx.win_mode);
 	style = mglGfxGetStyle(mgl_gfx.win_mode);
+
+	// Save window size because CreateWindowExW can execute window function
+	winx = mgl_gfx.win_virt_width;
+	winy = mgl_gfx.win_virt_height;
 
 	// Create window
 	mgl_gfx.wnd_handle = CreateWindowExW(
@@ -176,12 +183,21 @@ bool mglGfxInit(void)
 		return false;
 	}
 
+	// Restore window size
+	mgl_gfx.win_virt_width = winx;
+	mgl_gfx.win_virt_height = winy;
+
 	mglGfxGetDpiForWindow();
 
-	mgl_gfx.win_width = mgl_gfx.win_virt_width * mgl_gfx.win_dpix / 96;
-	mgl_gfx.win_height = mgl_gfx.win_virt_height * mgl_gfx.win_dpiy / 96;
+	if(mgl_gfx.win_mode == MGL_GFX_WINDOW_MODE_FULLSCREEN) {
+		mgl_gfx.win_virt_width = mgl_gfx.win_width * 96 / mgl_gfx.win_dpix;
+		mgl_gfx.win_virt_height = mgl_gfx.win_height * 96 / mgl_gfx.win_dpiy;
+	} else {
+		mgl_gfx.win_width = mgl_gfx.win_virt_width * mgl_gfx.win_dpix / 96;
+		mgl_gfx.win_height = mgl_gfx.win_virt_height * mgl_gfx.win_dpiy / 96;
 
-	mglGfxSetWindowSize(style, ex_style);
+		mglGfxSetWindowSize(style, ex_style);
+	}
 
 	// Choose and set pixel format
 
@@ -409,13 +425,22 @@ bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
 {
 	(void)flags;
 
-	if(mode != MGL_GFX_WINDOW_MODE_WINDOWED && mode != MGL_GFX_WINDOW_MODE_WINDOWED_FIXED)
-		return false;
+	switch(mode) {
+		case MGL_GFX_WINDOW_MODE_WINDOWED:
+		case MGL_GFX_WINDOW_MODE_WINDOWED_FIXED:
+		case MGL_GFX_WINDOW_MODE_FULLSCREEN:
+			break;
+		default:
+			return false;
+	}
 
 	if(mgl_gfx.mgl_init == true && mode != mgl_gfx.win_mode)
 		return false;
 
 	if(winx < 0 || winy < 0)
+		return false;
+
+	if(mgl_gfx.win_mode == MGL_GFX_WINDOW_MODE_FULLSCREEN && (winx != mgl_gfx.win_virt_width || winy != mgl_gfx.win_virt_height))
 		return false;
 
 	if(winx == 0 && mgl_gfx.win_width != 0)
@@ -694,6 +719,8 @@ static DWORD mglGfxGetStyle(int mode)
 	switch(mode) {
 		case MGL_GFX_WINDOW_MODE_WINDOWED_FIXED:
 			return WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+		case MGL_GFX_WINDOW_MODE_FULLSCREEN:
+			return WS_POPUP | WS_MAXIMIZE;
 		case MGL_GFX_WINDOW_MODE_WINDOWED:
 		default:
 			return WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
@@ -703,6 +730,8 @@ static DWORD mglGfxGetStyle(int mode)
 static DWORD mglGfxGetExStyle(int mode)
 {
 	switch(mode) {
+		case MGL_GFX_WINDOW_MODE_FULLSCREEN:
+			return 0;
 		case MGL_GFX_WINDOW_MODE_WINDOWED_FIXED:
 		case MGL_GFX_WINDOW_MODE_WINDOWED:
 		default:
