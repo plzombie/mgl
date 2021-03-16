@@ -54,6 +54,8 @@ int main(void)
 		wprintf(L"Error setting window width\n");
 	if(!mglGfxSetParami(MGL_GFX_PARAMI_WIN_HEIGHT, 560))
 		wprintf(L"Error setting window height\n");
+	if(!mglGfxSetParami(MGL_GFX_PARAMI_WIN_MODE, winmode))
+		wprintf(L"Error setting window mode\n");
 
 	mglGfxSetParami(MGL_GFX_PARAMI_BKG_RED, color_red);
 	mglGfxSetParami(MGL_GFX_PARAMI_BKG_GREEN, color_green);

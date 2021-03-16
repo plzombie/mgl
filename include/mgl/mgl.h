@@ -72,7 +72,8 @@ enum {
 };
 
 enum {
-	MGL_GFX_WINDOW_MODE_WINDOWED
+	MGL_GFX_WINDOW_MODE_WINDOWED,
+	MGL_GFX_WINDOW_MODE_WINDOWED_FIXED
 };
 
 extern bool mglGfxInit(void);

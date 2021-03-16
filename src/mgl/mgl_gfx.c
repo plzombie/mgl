@@ -409,7 +409,10 @@ bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
 {
 	(void)flags;
 
-	if(mode != MGL_GFX_WINDOW_MODE_WINDOWED)
+	if(mode != MGL_GFX_WINDOW_MODE_WINDOWED && mode != MGL_GFX_WINDOW_MODE_WINDOWED_FIXED)
+		return false;
+
+	if(mgl_gfx.mgl_init == true && mode != mgl_gfx.win_mode)
 		return false;
 
 	if(winx < 0 || winy < 0)
@@ -689,6 +692,8 @@ static void mglGfxSetWindowSize(DWORD style, DWORD ex_style)
 static DWORD mglGfxGetStyle(int mode)
 {
 	switch(mode) {
+		case MGL_GFX_WINDOW_MODE_WINDOWED_FIXED:
+			return WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 		case MGL_GFX_WINDOW_MODE_WINDOWED:
 		default:
 			return WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
@@ -698,6 +703,7 @@ static DWORD mglGfxGetStyle(int mode)
 static DWORD mglGfxGetExStyle(int mode)
 {
 	switch(mode) {
+		case MGL_GFX_WINDOW_MODE_WINDOWED_FIXED:
 		case MGL_GFX_WINDOW_MODE_WINDOWED:
 		default:
 			return WS_EX_OVERLAPPEDWINDOW;
