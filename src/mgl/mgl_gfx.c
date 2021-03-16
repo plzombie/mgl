@@ -67,7 +67,7 @@ typedef struct {
 static mgl_gfx_type mgl_gfx;
 
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-static void mglGfxSetWindowSize(DWORD style, DWORD ex_style);
+static void mglGfxSetWindowSize(DWORD style, DWORD ex_style, bool mode_changed);
 static DWORD mglGfxGetStyle(int mode);
 static DWORD mglGfxGetExStyle(int mode);
 static void mglGfxGetDpiForWindow(void);
@@ -190,13 +190,15 @@ bool mglGfxInit(void)
 	mglGfxGetDpiForWindow();
 
 	if(mgl_gfx.win_mode == MGL_GFX_WINDOW_MODE_FULLSCREEN) {
+		ShowWindow(mgl_gfx.wnd_handle, SW_MAXIMIZE);
+
 		mgl_gfx.win_virt_width = mgl_gfx.win_width * 96 / mgl_gfx.win_dpix;
 		mgl_gfx.win_virt_height = mgl_gfx.win_height * 96 / mgl_gfx.win_dpiy;
 	} else {
 		mgl_gfx.win_width = mgl_gfx.win_virt_width * mgl_gfx.win_dpix / 96;
 		mgl_gfx.win_height = mgl_gfx.win_virt_height * mgl_gfx.win_dpiy / 96;
 
-		mglGfxSetWindowSize(style, ex_style);
+		mglGfxSetWindowSize(style, ex_style, false);
 	}
 
 	// Choose and set pixel format
@@ -423,6 +425,8 @@ bool mglGfxSetParami(int param, int value)
 
 bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
 {
+	bool mode_changed = false;
+
 	(void)flags;
 
 	switch(mode) {
@@ -434,20 +438,20 @@ bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
 			return false;
 	}
 
-	if(mgl_gfx.mgl_init == true && mode != mgl_gfx.win_mode)
-		return false;
-
 	if(winx < 0 || winy < 0)
 		return false;
 
-	if(mgl_gfx.win_mode == MGL_GFX_WINDOW_MODE_FULLSCREEN && (winx != mgl_gfx.win_virt_width || winy != mgl_gfx.win_virt_height))
+	if(mode == mgl_gfx.win_mode && mode == MGL_GFX_WINDOW_MODE_FULLSCREEN && (winx != mgl_gfx.win_virt_width || winy != mgl_gfx.win_virt_height))
 		return false;
 
-	if(winx == 0 && mgl_gfx.win_width != 0)
+	if(winx == 0 && mgl_gfx.mgl_init == true)
 		return false;
 
-	if(winy == 0 && mgl_gfx.win_height != 0)
+	if(winy == 0 && mgl_gfx.mgl_init == true)
 		return false;
+
+	if(mode != mgl_gfx.win_mode)
+		mode_changed = true;
 
 	mgl_gfx.win_mode = mode;
 	mgl_gfx.win_virt_width = winx;
@@ -456,8 +460,12 @@ bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
 	mgl_gfx.win_width = mgl_gfx.win_virt_width * mgl_gfx.win_dpix / 96;
 	mgl_gfx.win_height = mgl_gfx.win_virt_height * mgl_gfx.win_dpiy / 96;
 
-	if(mgl_gfx.mgl_init)
-		mglGfxSetWindowSize(mglGfxGetStyle(mgl_gfx.win_mode), mglGfxGetExStyle(mgl_gfx.win_mode));
+	if(mgl_gfx.mgl_init) {
+		mglGfxSetWindowSize(mglGfxGetStyle(mgl_gfx.win_mode), mglGfxGetExStyle(mgl_gfx.win_mode), mode_changed);
+
+		if(mode == MGL_GFX_WINDOW_MODE_FULLSCREEN && mode_changed)
+			ShowWindow(mgl_gfx.wnd_handle, SW_MAXIMIZE);
+	}
 
 	return true;
 }
@@ -698,7 +706,7 @@ static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam,
 	}
 }
 
-static void mglGfxSetWindowSize(DWORD style, DWORD ex_style)
+static void mglGfxSetWindowSize(DWORD style, DWORD ex_style, bool mode_changed)
 {
 	RECT wnd_rect;
 
@@ -711,7 +719,12 @@ static void mglGfxSetWindowSize(DWORD style, DWORD ex_style)
 	else
 		AdjustWindowRectEx(&wnd_rect, style, 0, ex_style);
 
-	SetWindowPos(mgl_gfx.wnd_handle, NULL, 0, 0, wnd_rect.right - wnd_rect.left, wnd_rect.bottom - wnd_rect.top, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
+	if(mode_changed) {
+		SetWindowLongW(mgl_gfx.wnd_handle, GWL_STYLE, style);
+		SetWindowLongW(mgl_gfx.wnd_handle, GWL_EXSTYLE, ex_style);
+	}
+
+	SetWindowPos(mgl_gfx.wnd_handle, NULL, 0, 0, wnd_rect.right - wnd_rect.left, wnd_rect.bottom - wnd_rect.top, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE | (mode_changed?(SWP_FRAMECHANGED | SWP_SHOWWINDOW):0));
 }
 
 static DWORD mglGfxGetStyle(int mode)
@@ -720,7 +733,7 @@ static DWORD mglGfxGetStyle(int mode)
 		case MGL_GFX_WINDOW_MODE_WINDOWED_FIXED:
 			return WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 		case MGL_GFX_WINDOW_MODE_FULLSCREEN:
-			return WS_POPUP | WS_MAXIMIZE;
+			return WS_POPUP;
 		case MGL_GFX_WINDOW_MODE_WINDOWED:
 		default:
 			return WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
