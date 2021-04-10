@@ -156,6 +156,32 @@ static GLint mglGfxTexGetFormat(int tex_format)
 	}
 }
 
+static size_t mglGfxTexGetBytesPerPixel(int tex_format)
+{
+	switch(tex_format) {
+		case MGL_GFX_TEX_FORMAT_R8G8B8:
+			return 3;
+		case MGL_GFX_TEX_FORMAT_R8G8B8A8:
+			return 4;
+		case MGL_GFX_TEX_FORMAT_GRAYSCALE:
+			return 1;
+		default:
+			return 0;
+	}
+}
+
+static size_t mglGfxTexGetBytesPerRow(unsigned int tex_width, int tex_format)
+{
+	size_t bpp;
+
+	bpp = mglGfxTexGetBytesPerPixel(tex_format);
+
+	if(SIZE_MAX / bpp < tex_width)
+		return 0;
+	else
+		return tex_width * bpp;
+}
+
 static bool mglGfxCreateTexture(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer, uintptr_t *tex_int)
 {
 	GLuint gl_tex_id;
@@ -167,7 +193,7 @@ static bool mglGfxCreateTexture(unsigned int tex_width, unsigned int tex_height,
 	glGenTextures(1, &gl_tex_id);
 	if(glGetError()) {
 		*tex_int = 0;
-		
+
 		return false;
 	}
 
@@ -194,6 +220,11 @@ static bool mglGfxCreateTexture(unsigned int tex_width, unsigned int tex_height,
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	}
 
+	if(mglGfxTexGetBytesPerRow(tex_width, tex_format) % 4 == 0)
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+	else
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
 	glTexImage2D(GL_TEXTURE_2D, 0, mglGfxTexGetIntFormat(tex_format), tex_width, tex_height, 0, mglGfxTexGetFormat(tex_format), GL_UNSIGNED_BYTE, buffer);
 
 	if(mgl_gfx_tex_have)
@@ -216,7 +247,7 @@ static void mglGfxDestroyTexture(uintptr_t tex_int_id)
 	glDeleteTextures(1, &gl_tex_id);
 }
 
-static void mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_id, 
+static void mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_id,
 	float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
 	float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
 	float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3)
