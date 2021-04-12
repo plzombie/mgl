@@ -55,15 +55,27 @@ DECLARE_HANDLE(DPI_AWARENESS_CONTEXT);
 #ifndef WM_DPICHANGED
 #define WM_DPICHANGED 0x02E0
 #endif
+#ifndef DPI_ENUMS_DECLARED
+typedef enum PROCESS_DPI_AWARENESS {
+	PROCESS_DPI_UNAWARE = 0,
+	PROCESS_SYSTEM_DPI_AWARE,
+	PROCESS_PER_MONITOR_DPI_AWARE
+} PROCESS_DPI_AWARENESS;
+#define DPI_ENUMS_DECLARED
+#endif
 
 typedef BOOL (WINAPI *SetProcessDpiAwarenessContext_type)(DPI_AWARENESS_CONTEXT value);
 typedef BOOL (WINAPI *AdjustWindowRectExForDpi_type)(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle, UINT dpi);
 typedef UINT (WINAPI *GetDpiForWindow_type)(HWND hwnd);
 typedef BOOL (WINAPI *SetProcessDPIAware_type)(void);
+typedef BOOL (WINAPI *EnableNonClientDpiScaling_type)(HWND hwnd);
+typedef HRESULT(WINAPI *SetProcessDpiAwareness_type)(PROCESS_DPI_AWARENESS value);
 static SetProcessDpiAwarenessContext_type SetProcessDpiAwarenessContext_ptr;
 static AdjustWindowRectExForDpi_type AdjustWindowRectExForDpi_ptr;
 static GetDpiForWindow_type GetDpiForWindow_ptr;
 static SetProcessDPIAware_type SetProcessDPIAware_ptr;
+static EnableNonClientDpiScaling_type EnableNonClientDpiScaling_ptr;
+static SetProcessDpiAwareness_type SetProcessDpiAwareness_ptr;
 
 bool mglGfxInit(void)
 {
@@ -79,6 +91,8 @@ bool mglGfxInit(void)
 
 	if(SetProcessDpiAwarenessContext_ptr)
 		SetProcessDpiAwarenessContext_ptr(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+	else if(SetProcessDpiAwareness_ptr)
+		SetProcessDpiAwareness_ptr(PROCESS_PER_MONITOR_DPI_AWARE);
 	else if(SetProcessDPIAware_ptr)
 		SetProcessDPIAware_ptr();
 
@@ -455,6 +469,12 @@ static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam,
 	RECT *rect;
 
 	switch (msg) {
+		case WM_NCCREATE:
+			if(!SetProcessDpiAwarenessContext_ptr)
+				if(EnableNonClientDpiScaling_ptr)
+					EnableNonClientDpiScaling_ptr(hwnd);
+
+			return DefWindowProcW(hwnd, msg, wparam, lparam);
 		case WM_CHAR:
 		{
 			size_t i;
@@ -624,7 +644,7 @@ static void mglGfxGetDpiForWindow(void)
 
 static void mglGfxLoadSystemFuncs(void)
 {
-	HANDLE /*shcore, */user32;
+	HANDLE shcore, user32;
 
 	user32 = GetModuleHandleW(L"User32.dll");
 	if(user32) {
@@ -632,11 +652,12 @@ static void mglGfxLoadSystemFuncs(void)
 		AdjustWindowRectExForDpi_ptr = (AdjustWindowRectExForDpi_type)GetProcAddress(user32, "AdjustWindowRectExForDpi");
 		GetDpiForWindow_ptr = (GetDpiForWindow_type)GetProcAddress(user32, "GetDpiForWindow");
 		SetProcessDPIAware_ptr = (SetProcessDPIAware_type)GetProcAddress(user32, "SetProcessDPIAware");
+		EnableNonClientDpiScaling_ptr = (EnableNonClientDpiScaling_type)GetProcAddress(user32, "EnableNonClientDpiScaling");
 	}
 
-	/*shcore = GetModuleHandleW(L"Shcore.dll");
+	shcore = GetModuleHandleW(L"Shcore.dll");
 	if(!shcore) shcore = LoadLibraryW(L"Shcore.dll");
 	if(shcore) {
-		//	SetProcessDpiAwarenessContext_ptr = (SetProcessDpiAwarenessContext_type)GetProcAddress(shcore, "SetProcessDpiAwarenessContext");
-	}*/
+			SetProcessDpiAwareness_ptr = (SetProcessDpiAwareness_type)GetProcAddress(shcore, "SetProcessDpiAwareness");
+	}
 }
