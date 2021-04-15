@@ -27,6 +27,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #define _WIN32_WINNT 0x1000
+#define WINVER 0x1000
 
 #include "../../include/mgl/mgl.h"
 
@@ -61,6 +62,13 @@ typedef enum PROCESS_DPI_AWARENESS {
 	PROCESS_SYSTEM_DPI_AWARE,
 	PROCESS_PER_MONITOR_DPI_AWARE
 } PROCESS_DPI_AWARENESS;
+
+typedef enum MONITOR_DPI_TYPE {
+	MDT_EFFECTIVE_DPI = 0,
+	MDT_ANGULAR_DPI,
+	MDT_RAW_DPI,
+	DT_DEFAULT = MDT_EFFECTIVE_DPI
+} MONITOR_DPI_TYPE;
 #define DPI_ENUMS_DECLARED
 #endif
 
@@ -69,13 +77,15 @@ typedef BOOL (WINAPI *AdjustWindowRectExForDpi_type)(LPRECT lpRect, DWORD dwStyl
 typedef UINT (WINAPI *GetDpiForWindow_type)(HWND hwnd);
 typedef BOOL (WINAPI *SetProcessDPIAware_type)(void);
 typedef BOOL (WINAPI *EnableNonClientDpiScaling_type)(HWND hwnd);
-typedef HRESULT(WINAPI *SetProcessDpiAwareness_type)(PROCESS_DPI_AWARENESS value);
+typedef HRESULT (WINAPI *SetProcessDpiAwareness_type)(PROCESS_DPI_AWARENESS value);
+typedef HRESULT (WINAPI *GetDpiForMonitor_type)(HMONITOR hmonitor, MONITOR_DPI_TYPE dpiType, UINT *dpiX, UINT *dpiY);
 static SetProcessDpiAwarenessContext_type SetProcessDpiAwarenessContext_ptr;
 static AdjustWindowRectExForDpi_type AdjustWindowRectExForDpi_ptr;
 static GetDpiForWindow_type GetDpiForWindow_ptr;
 static SetProcessDPIAware_type SetProcessDPIAware_ptr;
 static EnableNonClientDpiScaling_type EnableNonClientDpiScaling_ptr;
 static SetProcessDpiAwareness_type SetProcessDpiAwareness_ptr;
+static GetDpiForMonitor_type GetDpiForMonitor_ptr;
 
 bool mglGfxInit(void)
 {
@@ -636,7 +646,20 @@ static void mglGfxGetDpiForWindow(void)
 {
 	if(GetDpiForWindow_ptr)
 		mgl_gfx.win_dpix = mgl_gfx.win_dpiy = GetDpiForWindow_ptr(mgl_gfx.wnd_handle);
-	else {
+	else if(GetDpiForMonitor_ptr) {
+		HMONITOR hmonitor;
+		UINT dpix, dpiy;
+
+		hmonitor = MonitorFromWindow(mgl_gfx.wnd_handle, MONITOR_DEFAULTTONEAREST);
+
+		if(GetDpiForMonitor_ptr(hmonitor, MDT_EFFECTIVE_DPI, &dpix, &dpiy) != S_OK) {
+			mgl_gfx.win_dpix = GetDeviceCaps(mgl_gfx.wnd_dc, LOGPIXELSX);
+			mgl_gfx.win_dpiy = GetDeviceCaps(mgl_gfx.wnd_dc, LOGPIXELSY);
+		} else {
+			mgl_gfx.win_dpix = dpix;
+			mgl_gfx.win_dpiy = dpiy;
+		}
+	} else {
 		mgl_gfx.win_dpix = GetDeviceCaps(mgl_gfx.wnd_dc, LOGPIXELSX);
 		mgl_gfx.win_dpiy = GetDeviceCaps(mgl_gfx.wnd_dc, LOGPIXELSY);
 	}
@@ -658,6 +681,7 @@ static void mglGfxLoadSystemFuncs(void)
 	shcore = GetModuleHandleW(L"Shcore.dll");
 	if(!shcore) shcore = LoadLibraryW(L"Shcore.dll");
 	if(shcore) {
-			SetProcessDpiAwareness_ptr = (SetProcessDpiAwareness_type)GetProcAddress(shcore, "SetProcessDpiAwareness");
+		SetProcessDpiAwareness_ptr = (SetProcessDpiAwareness_type)GetProcAddress(shcore, "SetProcessDpiAwareness");
+		GetDpiForMonitor_ptr = (GetDpiForMonitor_type)GetProcAddress(shcore, "GetDpiForMonitor");
 	}
 }
