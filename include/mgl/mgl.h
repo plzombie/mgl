@@ -99,6 +99,11 @@ extern size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int
 
 extern void mglGfxDestroyTexture(size_t tex_id);
 
+extern void mglGfxDrawTriangle(size_t tex_id,
+	float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
+	float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
+	float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3);
+
 extern bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r, int col_g, int col_b);
 
 #ifdef __cplusplus

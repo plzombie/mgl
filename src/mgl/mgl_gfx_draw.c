@@ -28,6 +28,29 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "mgl_gfx.h"
 
+void mglGfxDrawTriangle(size_t tex_id,
+	float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
+	float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
+	float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3)
+{
+	bool no_texture;
+
+	if(!mgl_gfx.mgl_init)
+		return;
+
+	if(tex_id == 0 || tex_id > mgl_gfx.textures_max)
+		no_texture = true;
+	else if (mgl_gfx.textures[tex_id - 1].tex_used == false)
+		no_texture = true;
+	else
+		no_texture = false;
+
+	mgl_gfx.gfx_api.DrawTriangle(no_texture, no_texture?0:mgl_gfx.textures[tex_id - 1].tex_int_id,
+		x1, y1, tex_x1, tex_y1, col_r1, col_g1, col_b1,
+		x2, y2, tex_x2, tex_y2, col_r2, col_g2, col_b2,
+		x3, y3, tex_x3, tex_y3, col_r3, col_g3, col_b3);
+}
+
 bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r, int col_g, int col_b)
 {
 	float pic_width, pic_height;

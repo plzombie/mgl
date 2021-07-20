@@ -107,8 +107,6 @@ int main(void)
 			mouse_y = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_Y);
 			mouse_bl = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_LEFT);
 
-			mglGfxDrawPicture(0, mouse_x, mouse_y, 0, 0, 16, 16, 1.0f, 2.0f, 64, 192, 128);
-
 			if(block_hovered) {
 				if(mouse_bl == MGL_GFX_KEY_PRESSED)
 					block_hovered = mglGfxDrawPicture(pic, 100, 100, 0, 0, 512, 512, 0.5f, 0.5f, 255, 255, 255);
@@ -116,6 +114,10 @@ int main(void)
 					block_hovered = mglGfxDrawPicture(pic, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 255, 255, 255);
 			} else
 				block_hovered = mglGfxDrawPicture(pic, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 64, 32, 80);
+
+			mglGfxDrawTriangle(0, (float)mouse_x, (float)mouse_y, 0.0f, 0.0f, 0.25f, 0.75f, 0.5f,
+				(float)mouse_x+32.0f, (float)mouse_y, 0.0f, 0.0f, 0.75f, 0.25f, 0.5f,
+				(float)mouse_x, (float)mouse_y+32.0f, 0.0f, 0.0f, 0.25f, 0.5f, 0.75f);
 
 			if(glGetError())
 				wprintf(L"OGL error occured\n");
