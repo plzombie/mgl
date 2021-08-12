@@ -33,6 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
+#include "mgl_declspec.h"
+
 #include "mgl_gfx_api.h"
 
 #include <stdbool.h>
@@ -77,34 +79,34 @@ enum {
 	MGL_GFX_WINDOW_MODE_FULLSCREEN
 };
 
-extern bool mglGfxInit(void);
+MGL_API bool MGL_APIENTRY mglGfxInit(void);
 
-extern void mglGfxClose(void);
+MGL_API void MGL_APIENTRY mglGfxClose(void);
 
-extern void mglGfxUpdate(void);
+MGL_API void MGL_APIENTRY mglGfxUpdate(void);
 
-extern int mglGfxGetParami(int param);
+MGL_API int MGL_APIENTRY mglGfxGetParami(int param);
 
-extern bool mglGfxSetParami(int param, int value);
+MGL_API bool MGL_APIENTRY mglGfxSetParami(int param, int value);
 
-extern wchar_t *mglGfxGetParamw(int param);
+MGL_API wchar_t * MGL_APIENTRY mglGfxGetParamw(int param);
 
-extern bool mglGfxSetParamw(int param, wchar_t *value);
+MGL_API bool MGL_APIENTRY mglGfxSetParamw(int param, wchar_t *value);
 
-extern bool mglGfxSetScreen(int winx, int winy, int mode, int flags);
+MGL_API bool MGL_APIENTRY mglGfxSetScreen(int winx, int winy, int mode, int flags);
 
-extern int mglGfxGetKey(int key);
+MGL_API int MGL_APIENTRY mglGfxGetKey(int key);
 
-extern size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer);
+MGL_API size_t MGL_APIENTRY mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer);
 
-extern void mglGfxDestroyTexture(size_t tex_id);
+MGL_API void MGL_APIENTRY mglGfxDestroyTexture(size_t tex_id);
 
-extern void mglGfxDrawTriangle(size_t tex_id,
+MGL_API void MGL_APIENTRY mglGfxDrawTriangle(size_t tex_id,
 	float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
 	float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
 	float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3);
 
-extern bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r, int col_g, int col_b);
+MGL_API bool MGL_APIENTRY mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r, int col_g, int col_b);
 
 #ifdef __cplusplus
 }

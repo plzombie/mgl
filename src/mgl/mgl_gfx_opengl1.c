@@ -34,14 +34,14 @@ static HGLRC mgl_gfx_wnd_glctx;
 static intptr_t mgl_gfx_tex_int_id;
 static bool mgl_gfx_tex_have; // true если текстура mgl_gfx_tex_int_id установлена через glBindTexture
 
-static bool mglGfxInitGfxApi(int win_width, int win_height, int viewport_width, int viewport_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc);
-static void mglGfxDestroyGfxApi(void);
-static void mglGfxSetScreen(int win_width, int win_height, int viewport_width, int viewport_height);
-static void mglGfxClearScreen(int bkg_red, int bkg_green, int bkg_blue);
-static void mglGfxSwapBuffers(HDC wnd_dc);
-static bool mglGfxCreateTexture(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer, uintptr_t *tex_int);
-static void mglGfxDestroyTexture(uintptr_t tex_int_id);
-static void mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_id,
+static bool MGL_CALLCONV mglGfxInitGfxApi(int win_width, int win_height, int viewport_width, int viewport_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc);
+static void MGL_CALLCONV mglGfxDestroyGfxApi(void);
+static void MGL_CALLCONV mglGfxSetScreen(int win_width, int win_height, int viewport_width, int viewport_height);
+static void MGL_CALLCONV mglGfxClearScreen(int bkg_red, int bkg_green, int bkg_blue);
+static void MGL_CALLCONV mglGfxSwapBuffers(HDC wnd_dc);
+static bool MGL_CALLCONV mglGfxCreateTexture(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer, uintptr_t *tex_int);
+static void MGL_CALLCONV mglGfxDestroyTexture(uintptr_t tex_int_id);
+static void MGL_CALLCONV mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_id,
 	float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
 	float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
 	float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3);
@@ -64,7 +64,7 @@ mgl_gfx_api_type mglGfxGetOGL1Api(void)
 	return api;
 }
 
-static bool mglGfxInitGfxApi(int win_width, int win_height, int viewport_width, int viewport_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc)
+static bool MGL_CALLCONV mglGfxInitGfxApi(int win_width, int win_height, int viewport_width, int viewport_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc)
 {
 	PIXELFORMATDESCRIPTOR pfd;
 	int pixelformat;
@@ -102,13 +102,13 @@ static bool mglGfxInitGfxApi(int win_width, int win_height, int viewport_width, 
 	return true;
 }
 
-static void mglGfxDestroyGfxApi(void)
+static void MGL_CALLCONV mglGfxDestroyGfxApi(void)
 {
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(mgl_gfx_wnd_glctx);
 }
 
-static void mglGfxSetScreen(int win_width, int win_height, int viewport_width, int viewport_height)
+static void MGL_CALLCONV mglGfxSetScreen(int win_width, int win_height, int viewport_width, int viewport_height)
 {
 	glViewport(0, 0, win_width, win_height);
 
@@ -121,7 +121,7 @@ static void mglGfxSetScreen(int win_width, int win_height, int viewport_width, i
 	glLoadIdentity();
 }
 
-static void mglGfxClearScreen(int bkg_red, int bkg_green, int bkg_blue)
+static void MGL_CALLCONV mglGfxClearScreen(int bkg_red, int bkg_green, int bkg_blue)
 {
 	glClearColor(bkg_red / 255.0f, bkg_green / 255.0f, bkg_blue / 255.0f, 0.0f);
 
@@ -182,7 +182,7 @@ static size_t mglGfxTexGetBytesPerRow(unsigned int tex_width, int tex_format)
 		return tex_width * bpp;
 }
 
-static bool mglGfxCreateTexture(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer, uintptr_t *tex_int)
+static bool MGL_CALLCONV mglGfxCreateTexture(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer, uintptr_t *tex_int)
 {
 	GLuint gl_tex_id;
 
@@ -233,12 +233,12 @@ static bool mglGfxCreateTexture(unsigned int tex_width, unsigned int tex_height,
 	return true;
 }
 
-static void mglGfxSwapBuffers(HDC wnd_dc)
+static void MGL_CALLCONV mglGfxSwapBuffers(HDC wnd_dc)
 {
 	SwapBuffers(wnd_dc);
 }
 
-static void mglGfxDestroyTexture(uintptr_t tex_int_id)
+static void MGL_CALLCONV mglGfxDestroyTexture(uintptr_t tex_int_id)
 {
 	GLuint gl_tex_id;
 
@@ -247,7 +247,7 @@ static void mglGfxDestroyTexture(uintptr_t tex_int_id)
 	glDeleteTextures(1, &gl_tex_id);
 }
 
-static void mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_id,
+static void MGL_CALLCONV mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_id,
 	float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
 	float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
 	float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3)

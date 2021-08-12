@@ -28,7 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "mgl_gfx.h"
 
-void mglGfxDrawTriangle(size_t tex_id,
+MGL_API void MGL_APIENTRY mglGfxDrawTriangle(size_t tex_id,
 	float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
 	float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
 	float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3)
@@ -51,7 +51,7 @@ void mglGfxDrawTriangle(size_t tex_id,
 		x3, y3, tex_x3, tex_y3, col_r3, col_g3, col_b3);
 }
 
-bool mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r, int col_g, int col_b)
+MGL_API bool MGL_APIENTRY mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r, int col_g, int col_b)
 {
 	float pic_width, pic_height;
 	float tex_start_x = 0.0f, tex_end_x = 0.0f, tex_start_y = 0.0f, tex_end_y = 0.0f;

@@ -33,6 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
+#include "mgl_declspec.h"
+
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -52,14 +54,14 @@ enum {
 
 typedef struct {
 	size_t size;
-	bool (*InitGfxApi)(int win_width, int win_height, int viewport_width, int viewport_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc);
-	void (*DestroyGfxApi)(void);
-	void (*SetScreen)(int win_width, int win_height, int viewport_width, int viewport_height);
-	void (*ClearScreen)(int bkg_red, int bkg_green, int bkg_blue);
-	void (*SwapBuffers)(HDC wnd_dc);
-	bool (*CreateTexture)(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer, uintptr_t *tex_int);
-	void (*DestroyTexture)(uintptr_t tex_int_id);
-	void (*DrawTriangle)(bool no_texture, uintptr_t tex_int_id,
+	bool (MGL_CALLCONV * InitGfxApi)(int win_width, int win_height, int viewport_width, int viewport_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc);
+	void (MGL_CALLCONV * DestroyGfxApi)(void);
+	void (MGL_CALLCONV * SetScreen)(int win_width, int win_height, int viewport_width, int viewport_height);
+	void (MGL_CALLCONV * ClearScreen)(int bkg_red, int bkg_green, int bkg_blue);
+	void (MGL_CALLCONV * SwapBuffers)(HDC wnd_dc);
+	bool (MGL_CALLCONV * CreateTexture)(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer, uintptr_t *tex_int);
+	void (MGL_CALLCONV * DestroyTexture)(uintptr_t tex_int_id);
+	void (MGL_CALLCONV * DrawTriangle)(bool no_texture, uintptr_t tex_int_id,
 		float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
 		float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
 		float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3);

@@ -87,7 +87,7 @@ static EnableNonClientDpiScaling_type EnableNonClientDpiScaling_ptr;
 static SetProcessDpiAwareness_type SetProcessDpiAwareness_ptr;
 static GetDpiForMonitor_type GetDpiForMonitor_ptr;
 
-bool mglGfxInit(void)
+MGL_API bool MGL_APIENTRY mglGfxInit(void)
 {
 	WNDCLASSW wnd_class;
 	HINSTANCE instance;
@@ -219,7 +219,7 @@ bool mglGfxInit(void)
 	return true;
 }
 
-void mglGfxClose(void)
+MGL_API void MGL_APIENTRY mglGfxClose(void)
 {
 	size_t i;
 	HINSTANCE instance;
@@ -246,7 +246,7 @@ void mglGfxClose(void)
 	mgl_gfx.mgl_init = false;
 }
 
-void mglGfxUpdate(void)
+MGL_API void MGL_APIENTRY mglGfxUpdate(void)
 {
 	MSG msg;
 	int i;
@@ -300,7 +300,7 @@ void mglGfxUpdate(void)
 
 }
 
-wchar_t *mglGfxGetParamw(int param)
+MGL_API wchar_t * MGL_APIENTRY mglGfxGetParamw(int param)
 {
 	switch(param) {
 		case MGL_GFX_PARAMW_WIN_INPUT_CHARS:
@@ -310,7 +310,7 @@ wchar_t *mglGfxGetParamw(int param)
 	}
 }
 
-bool mglGfxSetParamw(int param, wchar_t *value)
+MGL_API bool MGL_APIENTRY mglGfxSetParamw(int param, wchar_t *value)
 {
 	(void)value;
 
@@ -321,7 +321,7 @@ bool mglGfxSetParamw(int param, wchar_t *value)
 	}
 }
 
-int mglGfxGetParami(int param)
+MGL_API int MGL_APIENTRY mglGfxGetParami(int param)
 {
 	switch(param) {
 		case MGL_GFX_PARAMI_INIT:
@@ -365,7 +365,7 @@ int mglGfxGetParami(int param)
 	}
 }
 
-bool mglGfxSetParami(int param, int value)
+MGL_API bool MGL_APIENTRY mglGfxSetParami(int param, int value)
 {
 	switch (param) {
 		case MGL_GFX_PARAMI_INIT:
@@ -419,7 +419,7 @@ bool mglGfxSetParami(int param, int value)
 	}
 }
 
-bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
+MGL_API bool MGL_APIENTRY mglGfxSetScreen(int winx, int winy, int mode, int flags)
 {
 	bool mode_changed = false;
 
@@ -466,7 +466,7 @@ bool mglGfxSetScreen(int winx, int winy, int mode, int flags)
 	return true;
 }
 
-int mglGfxGetKey(int key)
+MGL_API int MGL_APIENTRY mglGfxGetKey(int key)
 {
 	if(key >= 0 && key < 256)
 		return mgl_gfx.win_keys[key];

@@ -28,7 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "mgl_gfx.h"
 
-size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer)
+MGL_API size_t MGL_APIENTRY mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_height, int tex_format, int tex_filters, void *buffer)
 {
 	size_t tex_id = 0;
 	uintptr_t tex_int_id = 0;
@@ -79,7 +79,7 @@ size_t mglGfxCreateTextureFromMemory(unsigned int tex_width, unsigned int tex_he
 	return tex_id + 1;
 }
 
-void mglGfxDestroyTexture(size_t tex_id)
+MGL_API void MGL_APIENTRY mglGfxDestroyTexture(size_t tex_id)
 {
 	if(tex_id == 0 || tex_id > mgl_gfx.textures_max)
 		return;

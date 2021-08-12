@@ -3,7 +3,7 @@
   <ItemGroup>
     <Filter Include="Исходные файлы">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
     <Filter Include="Файлы заголовков">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
@@ -13,38 +13,29 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Исходные файлы\gfx">
-      <UniqueIdentifier>{56035757-0775-4874-b662-b80cd44de6e1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Исходные файлы\gfx\opengl">
-      <UniqueIdentifier>{8789d448-6701-4d95-ae3d-9e8f8b3fc948}</UniqueIdentifier>
+    <Filter Include="Исходные файлы\opengl">
+      <UniqueIdentifier>{6d98738d-3658-4a01-bcf6-3a4c0704e905}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\tests\test1.c">
+    <ClCompile Include="..\..\..\src\mgl\mgl_gfx.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\mgl\mgl_gfx.c">
-      <Filter>Исходные файлы\gfx</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\mgl\mgl_gfx_draw.c">
-      <Filter>Исходные файлы\gfx</Filter>
+      <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\mgl\mgl_gfx_textures.c">
-      <Filter>Исходные файлы\gfx</Filter>
+      <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\mgl\mgl_gfx_opengl1.c">
-      <Filter>Исходные файлы\gfx\opengl</Filter>
+      <Filter>Исходные файлы\opengl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\include\mgl\mgl.h">
+    <ClInclude Include="..\..\..\src\mgl\mgl_gfx.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\mgl\mgl_declspec.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\include\mgl\mgl_gfx_api.h">
+    <ClInclude Include="..\..\..\src\mgl\mgl_gfx_opengl1.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
