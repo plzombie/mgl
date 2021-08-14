@@ -47,6 +47,7 @@ static size_t CreateTextureWithStbImage(char *filename, int tex_filters);
 int main(void)
 {
 	int winx, winy, winmode = MGL_GFX_WINDOW_MODE_WINDOWED, mouse_x, mouse_y, mouse_bl, color_red = 160, color_green = 64, color_blue = 192;
+	wchar_t *gfx_info;
 	size_t pic;
 	bool block_hovered = false;
 
@@ -63,6 +64,11 @@ int main(void)
 
 	if (mglGfxInit() == true) {
 		wprintf(L"Window created\n");
+
+		if((gfx_info = mglGfxGetParamw(MGL_GFX_PARAMW_INFO)) != 0)
+			wprintf(L"Gfx info:\n%ls\n", gfx_info);
+		else
+			wprintf(L"Can't get gfx info\n");
 
 		pic = CreateTextureWithStbImage("IMG_8315.jpg", MGL_GFX_TEX_FILTER_LINEAR_MAG | MGL_GFX_TEX_FILTER_LINEAR_MAG | MGL_GFX_TEX_FILTER_REPEAT);
 		if(pic)

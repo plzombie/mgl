@@ -56,6 +56,7 @@ typedef struct {
 	HGLRC wnd_glctx;
 	bool mgl_init;
 	bool mgl_need_exit;
+	wchar_t *gfx_info;
 } mgl_gfx_type;
 
 extern mgl_gfx_type mgl_gfx;

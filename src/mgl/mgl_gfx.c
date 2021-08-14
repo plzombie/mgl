@@ -214,6 +214,8 @@ MGL_API bool MGL_APIENTRY mglGfxInit(void)
 	mgl_gfx.textures = 0;
 	mgl_gfx.textures_max = 0;
 
+	mgl_gfx.gfx_info = mgl_gfx.gfx_api.GetInfo();
+
 	mgl_gfx.mgl_init = true;
 
 	return true;
@@ -226,6 +228,8 @@ MGL_API void MGL_APIENTRY mglGfxClose(void)
 
 	if(mgl_gfx.mgl_init == false)
 		return;
+
+	mgl_gfx.gfx_api.DestroyInfo(mgl_gfx.gfx_info);
 
 	instance = GetModuleHandle(NULL);
 
@@ -305,6 +309,8 @@ MGL_API wchar_t * MGL_APIENTRY mglGfxGetParamw(int param)
 	switch(param) {
 		case MGL_GFX_PARAMW_WIN_INPUT_CHARS:
 			return mgl_gfx.win_input_chars;
+		case MGL_GFX_PARAMW_INFO:
+			return mgl_gfx.gfx_info;
 		default:
 			return 0;
 	}

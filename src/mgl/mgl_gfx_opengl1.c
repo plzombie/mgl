@@ -45,6 +45,8 @@ static void MGL_CALLCONV mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_i
 	float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
 	float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
 	float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3);
+static wchar_t * MGL_CALLCONV mglGfxGetInfo(void);
+static void MGL_CALLCONV mglGfxDestroyInfo(wchar_t* info);
 
 mgl_gfx_api_type mglGfxGetOGL1Api(void)
 {
@@ -60,6 +62,8 @@ mgl_gfx_api_type mglGfxGetOGL1Api(void)
 	api.CreateTexture = mglGfxCreateTexture;
 	api.DestroyTexture = mglGfxDestroyTexture;
 	api.DrawTriangle = mglGfxDrawTriangle;
+	api.GetInfo = mglGfxGetInfo;
+	api.DestroyInfo = mglGfxDestroyInfo;
 
 	return api;
 }
@@ -285,4 +289,63 @@ static void MGL_CALLCONV mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_i
 	glColor4f(col_r3, col_g3, col_b3, 1.0f);
 	glVertex2f(x3, y3);
 	glEnd();
+}
+
+wchar_t * MGL_CALLCONV mglGfxGetInfo(void)
+{
+	wchar_t *info;
+	const wchar_t vendor[] = L"Vendor: ";
+	const wchar_t renderer[] = L"Renderer: ";
+	const wchar_t version[] = L"Version: ";
+	const wchar_t extensions[] = L"Extensions: ";
+	size_t infosize, vendor_size, renderer_size, version_size, ext_size, vendor_label_size, renderer_label_size, version_label_size, ext_label_size, temp_size, temp2_size;
+
+	vendor_size = strlen(glGetString(GL_VENDOR));
+	vendor_label_size = wcslen(vendor);
+	renderer_size = strlen(glGetString(GL_RENDERER));
+	renderer_label_size = wcslen(renderer);
+	version_size = strlen(glGetString(GL_VERSION));
+	version_label_size = wcslen(version);
+	ext_size = strlen(glGetString(GL_EXTENSIONS));
+	ext_label_size = wcslen(extensions);
+	infosize = vendor_label_size + vendor_size +
+		renderer_label_size + renderer_size + 
+		version_label_size + version_size +
+		ext_label_size + ext_size + 3;
+	info = malloc(infosize*sizeof(wchar_t));
+	if(info) {
+		wcscpy(info, vendor);
+		temp2_size = wcslen(info);
+		temp_size = temp2_size+vendor_size;
+		mbstowcs(info+temp2_size, glGetString(GL_VENDOR), vendor_size);
+		info[temp_size] = 0;
+		wcscat(info, L"\n");
+
+		wcscat(info, renderer);
+		temp2_size = temp_size+1+renderer_label_size;
+		temp_size += 1+renderer_label_size+renderer_size;
+		mbstowcs(info+temp2_size, glGetString(GL_RENDERER), renderer_size);
+		info[temp_size] = 0;
+		wcscat(info, L"\n");
+
+		wcscat(info, version);
+		temp2_size = temp_size+1+version_label_size;
+		temp_size += 1+version_label_size+version_size;
+		mbstowcs(info+temp2_size, glGetString(GL_VERSION), version_size);
+		info[temp_size] = 0;
+		wcscat(info, L"\n");
+
+		wcscat(info, extensions);
+		temp2_size = temp_size+ext_label_size+1;
+		temp_size += 1+ext_label_size+ext_size;
+		mbstowcs(info+temp2_size, glGetString(GL_EXTENSIONS), ext_size);
+	}
+
+	return info;
+}
+
+void MGL_CALLCONV mglGfxDestroyInfo(wchar_t *info)
+{
+	if (info)
+		free(info);
 }

@@ -38,6 +38,7 @@ extern "C" {
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <wchar.h>
 #include <Windows.h>
 
 enum {
@@ -65,6 +66,8 @@ typedef struct {
 		float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
 		float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
 		float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3);
+	wchar_t * (MGL_CALLCONV *GetInfo)(void);
+	void (MGL_CALLCONV *DestroyInfo)(wchar_t* info);
 } mgl_gfx_api_type;
 
 #ifdef __cplusplus
