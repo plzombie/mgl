@@ -54,9 +54,10 @@ typedef struct {
 	HDC wnd_dc;
 	ATOM wnd_class_atom;
 	HGLRC wnd_glctx;
+	wchar_t *gfx_info;
 	bool mgl_init;
 	bool mgl_need_exit;
-	wchar_t *gfx_info;
+	bool gfx_drawtexture;
 } mgl_gfx_type;
 
 extern mgl_gfx_type mgl_gfx;

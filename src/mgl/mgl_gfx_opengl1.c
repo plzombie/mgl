@@ -45,12 +45,12 @@ static void MGL_CALLCONV mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_i
 	float x1, float y1, float tex_x1, float tex_y1, float col_r1, float col_g1, float col_b1,
 	float x2, float y2, float tex_x2, float tex_y2, float col_r2, float col_g2, float col_b2,
 	float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3);
-static void MGL_CALLCONV mglGfxDrawTexture(uintptr_t tex_int_id, float x1, float y1, float tex_x1, float tex_y1, float x2, float y2, float tex_x2, float tex_y2);
+static void MGL_CALLCONV mglGfxDrawTexture(uintptr_t tex_int_id, float x1, float y1, float tex_x1, float tex_y1, float x2, float y2, float tex_x2, float tex_y2, float winy);
 static wchar_t * MGL_CALLCONV mglGfxGetInfo(void);
 static void MGL_CALLCONV mglGfxDestroyInfo(wchar_t* info);
 static bool MGL_CALLCONV mglGfxGetCaps(unsigned int capability);
 
-typedef void (__cdecl* glDrawTextureNV_type)(GLuint texture, GLuint sampler, GLfloat x0, GLfloat y0, GLfloat x1, GLfloat y1, GLfloat z, GLfloat s0, GLfloat t0, GLfloat s1, GLfloat t1);
+typedef void (__stdcall* glDrawTextureNV_type)(GLuint texture, GLuint sampler, GLfloat x0, GLfloat y0, GLfloat x1, GLfloat y1, GLfloat z, GLfloat s0, GLfloat t0, GLfloat s1, GLfloat t1);
 static glDrawTextureNV_type glDrawTextureNV_ptr;
 
 mgl_gfx_api_type mglGfxGetOGL1Api(void)
@@ -303,10 +303,10 @@ static void MGL_CALLCONV mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_i
 	glEnd();
 }
 
-static void MGL_CALLCONV mglGfxDrawTexture(uintptr_t tex_int_id, float x1, float y1, float tex_x1, float tex_y1, float x2, float y2, float tex_x2, float tex_y2)
+static void MGL_CALLCONV mglGfxDrawTexture(uintptr_t tex_int_id, float x1, float y1, float tex_x1, float tex_y1, float x2, float y2, float tex_x2, float tex_y2, float winy)
 {
 	if(glDrawTextureNV_ptr)
-		glDrawTextureNV_ptr((GLuint)tex_int_id, 0, x1, y1, x2, y2, 0, tex_x1, tex_y1, tex_x2, tex_y2);
+		glDrawTextureNV_ptr((GLuint)tex_int_id, 0, x1, winy-y2, x2, winy-y1, 0, tex_x1, tex_y2, tex_x2, tex_y1);
 }
 
 wchar_t * MGL_CALLCONV mglGfxGetInfo(void)
@@ -386,7 +386,7 @@ bool MGL_CALLCONV mglGfxGetCaps(unsigned int capability)
 			if(strstr(glGetString(GL_EXTENSIONS), "GL_NV_texture_rectangle")) return true;
 			return false;
 		case MGL_GFX_CAPS_DRAW_TEXTURE:
-			if(strstr(glGetString(GL_EXTENSIONS), "GL_NV_draw_texture")) return true;
+			//if(strstr(glGetString(GL_EXTENSIONS), "GL_NV_draw_texture")) return true; // Toooooo slow
 			return false;
 		default:
 			return false;

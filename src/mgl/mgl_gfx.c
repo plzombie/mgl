@@ -215,6 +215,7 @@ MGL_API bool MGL_APIENTRY mglGfxInit(void)
 	mgl_gfx.textures_max = 0;
 
 	mgl_gfx.gfx_info = mgl_gfx.gfx_api.GetInfo();
+	mgl_gfx.gfx_drawtexture = mgl_gfx.gfx_api.GetCaps(MGL_GFX_CAPS_DRAW_TEXTURE);
 
 	mgl_gfx.mgl_init = true;
 
