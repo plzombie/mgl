@@ -53,6 +53,7 @@ MGL_API void MGL_APIENTRY mglGfxDrawTriangle(size_t tex_id,
 
 MGL_API bool MGL_APIENTRY mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r, int col_g, int col_b)
 {
+	uintptr_t tex_int_id;
 	float pic_width, pic_height;
 	float tex_start_x = 0.0f, tex_end_x = 0.0f, tex_start_y = 0.0f, tex_end_y = 0.0f;
 	bool no_texture;
@@ -81,31 +82,32 @@ MGL_API bool MGL_APIENTRY mglGfxDrawPicture(size_t tex_id, int off_x, int off_y,
 		tex_end_x = (float)(toff_x + size_x) / mgl_gfx.textures[tex_id - 1].tex_width;
 		tex_start_y = (float)(toff_y) / mgl_gfx.textures[tex_id - 1].tex_height;
 		tex_end_y = (float)(toff_y + size_y) / mgl_gfx.textures[tex_id - 1].tex_height;
-	}
+		tex_int_id = mgl_gfx.textures[tex_id - 1].tex_int_id;
+	} else tex_int_id = 0;
 
 	// Отрисовка изображения
 	if (!no_texture && mgl_gfx.gfx_drawtexture
 		&& col_r == 255 && col_g == 255 && col_b == 255
 		&& mgl_gfx.win_virt_width == mgl_gfx.win_width
 		&& mgl_gfx.win_virt_height == mgl_gfx.win_height) {
-		mgl_gfx.gfx_api.DrawTexture(mgl_gfx.textures[tex_id - 1].tex_int_id,
+		mgl_gfx.gfx_api.DrawTexture(tex_int_id,
 			(float)off_x, (float)off_y,
 			tex_start_x, tex_start_y,
 			(float)off_x + pic_width, (float)off_y + pic_height,
 			tex_end_x, tex_end_y,
 			(float)mgl_gfx.win_virt_height);
 	} else {
-		mgl_gfx.gfx_api.DrawTriangle(no_texture, no_texture?0:mgl_gfx.textures[tex_id - 1].tex_int_id,
+		mgl_gfx.gfx_api.DrawTriangle(no_texture, tex_int_id,
 			(float)off_x, (float)off_y, tex_start_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
 			(float)off_x, (float)off_y + pic_height, tex_start_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
 			(float)off_x + pic_width, (float)off_y + pic_height, tex_end_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f);
-		mgl_gfx.gfx_api.DrawTriangle(no_texture, no_texture?0:mgl_gfx.textures[tex_id - 1].tex_int_id,
+		mgl_gfx.gfx_api.DrawTriangle(no_texture, tex_int_id,
 			(float)off_x, (float)off_y, tex_start_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
 			(float)off_x + pic_width, (float)off_y + pic_height, tex_end_x, tex_end_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f,
 			(float)off_x + pic_width, (float)off_y, tex_end_x, tex_start_y, col_r / 255.0f, col_g / 255.0f, col_b / 255.0f);
 	}
 
-	if(off_x <= mgl_gfx.mouse_virt_x && off_x + pic_width > mgl_gfx.mouse_virt_x &&
+	if (off_x <= mgl_gfx.mouse_virt_x && off_x + pic_width > mgl_gfx.mouse_virt_x &&
 		off_y <= mgl_gfx.mouse_virt_y && off_y + pic_height > mgl_gfx.mouse_virt_y)
 		return true;
 	else

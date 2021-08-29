@@ -34,6 +34,18 @@ static HGLRC mgl_gfx_wnd_glctx;
 static intptr_t mgl_gfx_tex_int_id;
 static bool mgl_gfx_tex_have; // true если текстура mgl_gfx_tex_int_id установлена через glBindTexture
 
+#define MGL_GFX_VARRAY_SIZE 30000
+#define MGL_GFX_VARRAY_THRESHOLD 18
+
+typedef struct {
+	float s, t;
+	float r, g, b;
+	float x, y, z;
+} mgl_gfx_varray_type; // GL_T2F_C3F_V3F
+static mgl_gfx_varray_type mgl_gfx_varray[MGL_GFX_VARRAY_SIZE];
+static size_t mgl_gfx_varray_counter = 0;
+static size_t mgl_gfx_varray_max = MGL_GFX_VARRAY_SIZE;
+
 static bool MGL_CALLCONV mglGfxInitGfxApi(int win_width, int win_height, int viewport_width, int viewport_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc);
 static void MGL_CALLCONV mglGfxDestroyGfxApi(void);
 static void MGL_CALLCONV mglGfxSetScreen(int win_width, int win_height, int viewport_width, int viewport_height);
@@ -109,6 +121,7 @@ static bool MGL_CALLCONV mglGfxInitGfxApi(int win_width, int win_height, int vie
 
 	mgl_gfx_tex_int_id = 0;
 	mgl_gfx_tex_have = false;
+	mgl_gfx_varray_counter = 0;
 
 	if(strstr(glGetString(GL_EXTENSIONS), "GL_NV_draw_texture"))
 		glDrawTextureNV_ptr = (glDrawTextureNV_type)wglGetProcAddress("glDrawTextureNV");
@@ -249,14 +262,43 @@ static bool MGL_CALLCONV mglGfxCreateTexture(unsigned int tex_width, unsigned in
 	return true;
 }
 
+static void mglGfxFlushDrawBuffer(void)
+{
+	if(mgl_gfx_varray_counter > 0) {
+		if(mgl_gfx_varray_counter > MGL_GFX_VARRAY_THRESHOLD) {
+			glInterleavedArrays(GL_T2F_C3F_V3F, 0, mgl_gfx_varray);
+			glDrawArrays(GL_TRIANGLES, 0, mgl_gfx_varray_counter);
+		} else { // glBegin works faster
+			size_t i;
+
+			glBegin(GL_TRIANGLES);
+			for(i = 0; i < mgl_gfx_varray_counter; i++) {
+				if(mgl_gfx_tex_have) glTexCoord2f(mgl_gfx_varray[i].s, mgl_gfx_varray[i].t);
+				glColor4f(mgl_gfx_varray[i].r, mgl_gfx_varray[i].g, mgl_gfx_varray[i].b, 1.0f);
+				glVertex3f(mgl_gfx_varray[i].x, mgl_gfx_varray[i].y, mgl_gfx_varray[i].z);
+			}
+			glEnd();
+		}
+		mgl_gfx_varray_counter = 0;
+	}
+}
+
 static void MGL_CALLCONV mglGfxSwapBuffers(HDC wnd_dc)
 {
+	mglGfxFlushDrawBuffer();
+
 	SwapBuffers(wnd_dc);
 }
 
 static void MGL_CALLCONV mglGfxDestroyTexture(uintptr_t tex_int_id)
 {
 	GLuint gl_tex_id;
+
+	if(mgl_gfx_tex_have = true && mgl_gfx_tex_int_id == tex_int_id) {
+		mglGfxFlushDrawBuffer();
+		glDisable(GL_TEXTURE_2D);
+		mgl_gfx_tex_have = false;
+	}
 
 	gl_tex_id = (GLuint)(tex_int_id);
 
@@ -271,36 +313,58 @@ static void MGL_CALLCONV mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_i
 	// Установка текстуры
 	if(no_texture == true) {
 		if(mgl_gfx_tex_have == true) {
+			mglGfxFlushDrawBuffer();
 			glDisable(GL_TEXTURE_2D);
 			mgl_gfx_tex_have = false;
 		}
 	}
 	else {
 		if(mgl_gfx_tex_have == false) {
+			mglGfxFlushDrawBuffer();
 			glEnable(GL_TEXTURE_2D);
 			mgl_gfx_tex_have = true;
 			glBindTexture(GL_TEXTURE_2D, (GLuint)(tex_int_id));
 			mgl_gfx_tex_int_id = tex_int_id;
 		} else if(mgl_gfx_tex_int_id != tex_int_id) {
+			mglGfxFlushDrawBuffer();
 			glBindTexture(GL_TEXTURE_2D, (GLuint)(tex_int_id));
 			mgl_gfx_tex_int_id = tex_int_id;
 		}
 	}
 
 	// Отрисовка изображения
-	glBegin(GL_TRIANGLES);
-	if(no_texture == false) glTexCoord2f(tex_x1, tex_y1);
-	glColor4f(col_r1, col_g1, col_b1, 1.0f);
-	glVertex2f(x1, y1);
+	if(mgl_gfx_varray_max-mgl_gfx_varray_counter < 3) {
+		mglGfxFlushDrawBuffer();
+	}
+	mgl_gfx_varray[mgl_gfx_varray_counter].s = tex_x1;
+	mgl_gfx_varray[mgl_gfx_varray_counter].t = tex_y1;
+	mgl_gfx_varray[mgl_gfx_varray_counter].r = col_r1;
+	mgl_gfx_varray[mgl_gfx_varray_counter].g = col_g1;
+	mgl_gfx_varray[mgl_gfx_varray_counter].b = col_b1;
+	mgl_gfx_varray[mgl_gfx_varray_counter].x = x1;
+	mgl_gfx_varray[mgl_gfx_varray_counter].y = y1;
+	mgl_gfx_varray[mgl_gfx_varray_counter].z = 0;
+	mgl_gfx_varray_counter++;
 
-	if(no_texture == false) glTexCoord2f(tex_x2, tex_y2);
-	glColor4f(col_r2, col_g2, col_b2, 1.0f);
-	glVertex2f(x2, y2);
+	mgl_gfx_varray[mgl_gfx_varray_counter].s = tex_x2;
+	mgl_gfx_varray[mgl_gfx_varray_counter].t = tex_y2;
+	mgl_gfx_varray[mgl_gfx_varray_counter].r = col_r2;
+	mgl_gfx_varray[mgl_gfx_varray_counter].g = col_g2;
+	mgl_gfx_varray[mgl_gfx_varray_counter].b = col_b2;
+	mgl_gfx_varray[mgl_gfx_varray_counter].x = x2;
+	mgl_gfx_varray[mgl_gfx_varray_counter].y = y2;
+	mgl_gfx_varray[mgl_gfx_varray_counter].z = 0;
+	mgl_gfx_varray_counter++;
 
-	if(no_texture == false) glTexCoord2f(tex_x3, tex_y3);
-	glColor4f(col_r3, col_g3, col_b3, 1.0f);
-	glVertex2f(x3, y3);
-	glEnd();
+	mgl_gfx_varray[mgl_gfx_varray_counter].s = tex_x3;
+	mgl_gfx_varray[mgl_gfx_varray_counter].t = tex_y3;
+	mgl_gfx_varray[mgl_gfx_varray_counter].r = col_r3;
+	mgl_gfx_varray[mgl_gfx_varray_counter].g = col_g3;
+	mgl_gfx_varray[mgl_gfx_varray_counter].b = col_b3;
+	mgl_gfx_varray[mgl_gfx_varray_counter].x = x3;
+	mgl_gfx_varray[mgl_gfx_varray_counter].y = y3;
+	mgl_gfx_varray[mgl_gfx_varray_counter].z = 0;
+	mgl_gfx_varray_counter++;
 }
 
 static void MGL_CALLCONV mglGfxDrawTexture(uintptr_t tex_int_id, float x1, float y1, float tex_x1, float tex_y1, float x2, float y2, float tex_x2, float tex_y2, float winy)
