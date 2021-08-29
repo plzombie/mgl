@@ -33,6 +33,12 @@ MGL_API size_t MGL_APIENTRY mglGfxCreateTextureFromMemory(unsigned int tex_width
 	size_t tex_id = 0;
 	uintptr_t tex_int_id = 0;
 
+	// Проверка на текстуры не в степени двойки
+	if(MGL_GFX_TEXTURE_IS_NPOT(tex_width) || MGL_GFX_TEXTURE_IS_NPOT(tex_height)) {
+		if(mgl_gfx.gfx_api.GetCaps(MGL_GFX_CAPS_TEXTURE_NPOT) == false)
+			return false;
+	}
+
 	// Аллокатор для текстур
 	if(mgl_gfx.textures_max == 0) {
 		mgl_gfx.textures_max = 2;

@@ -61,4 +61,6 @@ typedef struct {
 
 extern mgl_gfx_type mgl_gfx;
 
+#define MGL_GFX_TEXTURE_IS_NPOT(x) ((x)&(x-1))
+
 #endif
