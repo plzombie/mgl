@@ -421,6 +421,7 @@ wchar_t * MGL_CALLCONV mglGfxGetInfo(void)
 		temp2_size = temp_size+ext_label_size+1;
 		temp_size += 1+ext_label_size+ext_size;
 		mbstowcs(info+temp2_size, glGetString(GL_EXTENSIONS), ext_size);
+		info[temp_size] = 0;
 	}
 
 	return info;
