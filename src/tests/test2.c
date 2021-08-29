@@ -1,7 +1,7 @@
 /*
 BSD 2-Clause License
 
-Copyright (c) 2020-2021, Mikhail Morozov
+Copyright (c) 2021, Mikhail Morozov
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,21 +32,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "../../include/mgl/mgl.h"
 #include "../mgl/mgl_stb_image.h"
 
-#include <stdio.h>
-#include <wchar.h>
-
-static void PrintWindowParams(void);
-static void PrintWindowDpi(void);
-static void PrintKeys(void);
-static void PrintMouseButtons(void);
-static void PrintInputChars(void);
-
 int main(void)
 {
 	int winx, winy, winmode = MGL_GFX_WINDOW_MODE_WINDOWED, mouse_x, mouse_y, mouse_bl, color_red = 160, color_green = 64, color_blue = 192;
 	wchar_t *gfx_info;
-	size_t pic;
-	bool block_hovered = false;
+	size_t pic, i;
 
 	if(!mglGfxSetParami(MGL_GFX_PARAMI_WIN_WIDTH, 800))
 		wprintf(L"Error setting window width\n");
@@ -100,24 +90,13 @@ int main(void)
 				mglGfxSetScreen(winx, winy, winmode, 0);
 			}
 
-			PrintWindowParams();
-			PrintWindowDpi();
-			PrintKeys();
-			PrintMouseButtons();
-			PrintInputChars();
-
 			mouse_x = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_X);
 			mouse_y = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_Y);
 			mouse_bl = mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_LEFT);
-
-			if(block_hovered) {
-				if(mouse_bl == MGL_GFX_KEY_PRESSED)
-					block_hovered = mglGfxDrawPicture(pic, 100, 100, 0, 0, 512, 512, 0.5f, 0.5f, 255, 255, 255);
-				else
-					block_hovered = mglGfxDrawPicture(pic, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 255, 255, 255);
-			} else
-				block_hovered = mglGfxDrawPicture(pic, 100, 100, 0, 0, 256, 256, 1.0f, 1.0f, 64, 32, 80);
-
+			
+			for(i = 0; i < 100000; i++)
+				mglGfxDrawPicture(pic, rand()%winx, rand()%winy, rand()%256, rand()%256, 256, 256, (float)(rand())/(float)RAND_MAX, (float)(rand())/(float)RAND_MAX, 255, 255, 255);		
+			
 			mglGfxDrawTriangle(0, (float)mouse_x, (float)mouse_y, 0.0f, 0.0f, 0.25f, 0.75f, 0.5f,
 				(float)mouse_x+32.0f, (float)mouse_y, 0.0f, 0.0f, 0.75f, 0.25f, 0.5f,
 				(float)mouse_x, (float)mouse_y+32.0f, 0.0f, 0.0f, 0.25f, 0.5f, 0.75f);
@@ -135,94 +114,4 @@ int main(void)
 	wprintf(L"Window closed\n");
 
 	return 0;
-}
-
-static void PrintWindowParams(void)
-{
-	static int winx = 0, winy = 0;
-
-	if(mglGfxGetParami(MGL_GFX_PARAMI_WIN_WIDTH) != winx) {
-		winx = mglGfxGetParami(MGL_GFX_PARAMI_WIN_WIDTH);
-		wprintf(L"winx: %d\n", winx);
-	}
-
-	if(mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT) != winy) {
-		winy = mglGfxGetParami(MGL_GFX_PARAMI_WIN_HEIGHT);
-		wprintf(L"winy: %d\n", winy);
-	}
-}
-
-static void PrintWindowDpi(void)
-{
-	static int dpix = 0, dpiy = 0;
-
-	if(mglGfxGetParami(MGL_GFX_PARAMI_WIN_DPIX) != dpix) {
-		dpix = mglGfxGetParami(MGL_GFX_PARAMI_WIN_DPIX);
-		wprintf(L"DpiX: %d\n", dpix);
-	}
-
-	if(mglGfxGetParami(MGL_GFX_PARAMI_WIN_DPIY) != dpiy) {
-		dpiy = mglGfxGetParami(MGL_GFX_PARAMI_WIN_DPIY);
-		wprintf(L"DpiY: %d\n", dpiy);
-	}
-}
-
-static void PrintKeys(void)
-{
-	char key;
-
-	for(key = '0'; key <= '9'; key++) {
-		if(mglGfxGetKey(key) == MGL_GFX_KEY_JUST_PRESSED)
-			wprintf(L"Key %c pressed\n", key);
-		if(mglGfxGetKey(key) == MGL_GFX_KEY_RELEASED)
-			wprintf(L"Key %c released\n", key);
-	}
-
-	for(key = 'A'; key <= 'Z'; key++) {
-		if(mglGfxGetKey(key) == MGL_GFX_KEY_JUST_PRESSED)
-			wprintf(L"Key %c pressed\n", key);
-		if(mglGfxGetKey(key) == MGL_GFX_KEY_RELEASED)
-			wprintf(L"Key %c released\n", key);
-	}
-}
-
-static void PrintMouseButtons(void)
-{
-	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_LEFT) == MGL_GFX_KEY_JUST_PRESSED)
-		wprintf(L"Left mouse button pressed\n");
-	else if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_LEFT) == MGL_GFX_KEY_RELEASED)
-		wprintf(L"Left mouse button released\n");
-
-	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_RIGHT) == MGL_GFX_KEY_JUST_PRESSED)
-		wprintf(L"Right mouse button pressed\n");
-	else if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_RIGHT) == MGL_GFX_KEY_RELEASED)
-		wprintf(L"Right mouse button released\n");
-
-	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_MIDDLE) == MGL_GFX_KEY_JUST_PRESSED)
-		wprintf(L"Middle mouse button pressed\n");
-	else if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_MIDDLE) == MGL_GFX_KEY_RELEASED)
-		wprintf(L"Middle mouse button released\n");
-
-	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_4) == MGL_GFX_KEY_JUST_PRESSED)
-		wprintf(L"4 mouse button pressed\n");
-	else if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_4) == MGL_GFX_KEY_RELEASED)
-		wprintf(L"4 mouse button released\n");
-
-	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_5) == MGL_GFX_KEY_JUST_PRESSED)
-		wprintf(L"5 mouse button pressed\n");
-	else if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_KEY_5) == MGL_GFX_KEY_RELEASED)
-		wprintf(L"5 mouse button released\n");
-
-	if(mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_WHEEL))
-		wprintf(L"Mouse wheel: %d\n", mglGfxGetParami(MGL_GFX_PARAMI_MOUSE_WHEEL));
-}
-
-static void PrintInputChars(void)
-{
-	wchar_t *inp;
-
-	inp = mglGfxGetParamw(MGL_GFX_PARAMW_WIN_INPUT_CHARS);
-
-	if(*inp)
-		wprintf(L"Text input: %ls\n", inp);
 }

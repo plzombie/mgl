@@ -36,6 +36,9 @@
     <ClCompile Include="..\..\..\src\mgl\mgl_gfx_opengl1.c">
       <Filter>Исходные файлы\gfx\opengl</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\mgl\mgl_stb_image.c">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\mgl\mgl.h">

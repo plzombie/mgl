@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\mgl\mgl_stb_image.c" />
     <ClCompile Include="..\..\..\src\tests\test1.c" />
   </ItemGroup>
   <ItemGroup>

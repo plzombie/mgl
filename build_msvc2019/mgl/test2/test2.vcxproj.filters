@@ -13,18 +13,31 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Исходные файлы\gfx">
+      <UniqueIdentifier>{c5f98a7c-f708-4182-86cd-ea29dd545d2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\gfx\opengl">
+      <UniqueIdentifier>{b288b03a-e59c-4c24-96e0-fe4e2cab32ba}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\tests\test1.c">
+    <ClCompile Include="..\..\..\src\tests\test2.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\mgl\mgl_stb_image.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\src\third_party\stb_image.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
+    <ClCompile Include="..\..\..\src\mgl\mgl_gfx.c">
+      <Filter>Исходные файлы\gfx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\mgl\mgl_gfx_draw.c">
+      <Filter>Исходные файлы\gfx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\mgl\mgl_gfx_textures.c">
+      <Filter>Исходные файлы\gfx</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\mgl\mgl_gfx_opengl1.c">
+      <Filter>Исходные файлы\gfx\opengl</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
