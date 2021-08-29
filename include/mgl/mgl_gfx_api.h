@@ -53,6 +53,13 @@ enum {
 	MGL_GFX_TEX_FILTER_LINEAR_MAG = 0x4
 };
 
+enum {
+	MGL_GFX_CAPS_TEXTURE_NPOT,
+	MGL_GFX_CAPS_TEXTURE_ANISOTROPIC,
+	MGL_GFX_CAPS_MULTITEXTURE,
+	MGL_GFX_CAPS_TEXTURE_RECTANGLE
+};
+
 typedef struct {
 	size_t size;
 	bool (MGL_CALLCONV * InitGfxApi)(int win_width, int win_height, int viewport_width, int viewport_height, int bkg_red, int bkg_green, int bkg_blue, HDC wnd_dc);

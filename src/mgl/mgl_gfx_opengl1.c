@@ -354,5 +354,22 @@ void MGL_CALLCONV mglGfxDestroyInfo(wchar_t *info)
 
 bool MGL_CALLCONV mglGfxGetCaps(unsigned int capability)
 {
-	return false;
+	switch(capability) {
+		case MGL_GFX_CAPS_TEXTURE_NPOT:
+			if(strstr(glGetString(GL_EXTENSIONS), "GL_ARB_texture_non_power_of_two")) return true;
+			return false;
+		case MGL_GFX_CAPS_TEXTURE_ANISOTROPIC:
+			if(strstr(glGetString(GL_EXTENSIONS), "GL_ARB_texture_filter_anisotropic")) return true;
+			if(strstr(glGetString(GL_EXTENSIONS), "GL_EXT_texture_filter_anisotropic")) return true;
+			return false;
+		case MGL_GFX_CAPS_MULTITEXTURE:
+			if(strstr(glGetString(GL_EXTENSIONS), "GL_ARB_multitexture")) return true;
+			return false;
+		case MGL_GFX_CAPS_TEXTURE_RECTANGLE:
+			if(strstr(glGetString(GL_EXTENSIONS), "GL_ARB_texture_rectangle")) return true;
+			if(strstr(glGetString(GL_EXTENSIONS), "GL_NV_texture_rectangle")) return true;
+			return false;
+		default:
+			return false;
+	}
 }
