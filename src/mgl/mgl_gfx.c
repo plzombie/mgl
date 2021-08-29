@@ -480,6 +480,11 @@ MGL_API int MGL_APIENTRY mglGfxGetKey(int key)
 	return MGL_GFX_KEY_UP;
 }
 
+MGL_API bool MGL_APIENTRY mglGfxGetCaps(unsigned int capability)
+{
+	return mgl_gfx.gfx_api.GetCaps(capability);
+}
+
 static LRESULT CALLBACK mglGfxMainWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	RECT *rect;

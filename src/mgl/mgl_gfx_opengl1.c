@@ -47,6 +47,7 @@ static void MGL_CALLCONV mglGfxDrawTriangle(bool no_texture, uintptr_t tex_int_i
 	float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3);
 static wchar_t * MGL_CALLCONV mglGfxGetInfo(void);
 static void MGL_CALLCONV mglGfxDestroyInfo(wchar_t* info);
+static bool MGL_CALLCONV mglGfxGetCaps(unsigned int capability);
 
 mgl_gfx_api_type mglGfxGetOGL1Api(void)
 {
@@ -64,7 +65,8 @@ mgl_gfx_api_type mglGfxGetOGL1Api(void)
 	api.DrawTriangle = mglGfxDrawTriangle;
 	api.GetInfo = mglGfxGetInfo;
 	api.DestroyInfo = mglGfxDestroyInfo;
-
+	api.GetCaps = mglGfxGetCaps;
+	
 	return api;
 }
 
@@ -348,4 +350,9 @@ void MGL_CALLCONV mglGfxDestroyInfo(wchar_t *info)
 {
 	if (info)
 		free(info);
+}
+
+bool MGL_CALLCONV mglGfxGetCaps(unsigned int capability)
+{
+	return false;
 }

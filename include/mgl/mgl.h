@@ -109,6 +109,8 @@ MGL_API void MGL_APIENTRY mglGfxDrawTriangle(size_t tex_id,
 
 MGL_API bool MGL_APIENTRY mglGfxDrawPicture(size_t tex_id, int off_x, int off_y, int toff_x, int toff_y, int size_x, int size_y, float scale_x, float scale_y, int col_r, int col_g, int col_b);
 
+MGL_API bool MGL_APIENTRY mglGfxGetCaps(unsigned int capability);
+
 #ifdef __cplusplus
 }
 #endif

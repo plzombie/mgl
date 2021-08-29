@@ -68,6 +68,7 @@ typedef struct {
 		float x3, float y3, float tex_x3, float tex_y3, float col_r3, float col_g3, float col_b3);
 	wchar_t * (MGL_CALLCONV *GetInfo)(void);
 	void (MGL_CALLCONV *DestroyInfo)(wchar_t* info);
+	bool (MGL_CALLCONV *GetCaps)(unsigned int capability);
 } mgl_gfx_api_type;
 
 #ifdef __cplusplus
