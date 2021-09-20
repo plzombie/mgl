@@ -267,7 +267,7 @@ static void mglGfxFlushDrawBuffer(void)
 	if(mgl_gfx_varray_counter > 0) {
 		if(mgl_gfx_varray_counter > MGL_GFX_VARRAY_THRESHOLD) {
 			glInterleavedArrays(GL_T2F_C3F_V3F, 0, mgl_gfx_varray);
-			glDrawArrays(GL_TRIANGLES, 0, mgl_gfx_varray_counter);
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)mgl_gfx_varray_counter);
 		} else { // glBegin works faster
 			size_t i;
 
@@ -393,7 +393,7 @@ wchar_t * MGL_CALLCONV mglGfxGetInfo(void)
 	infosize = vendor_label_size + vendor_size +
 		renderer_label_size + renderer_size + 
 		version_label_size + version_size +
-		ext_label_size + ext_size + 3;
+		ext_label_size + ext_size + 4;
 	info = malloc(infosize*sizeof(wchar_t));
 	if(info) {
 		wcscpy(info, vendor);
@@ -429,7 +429,7 @@ wchar_t * MGL_CALLCONV mglGfxGetInfo(void)
 
 void MGL_CALLCONV mglGfxDestroyInfo(wchar_t *info)
 {
-	if (info)
+	if(info)
 		free(info);
 }
 
